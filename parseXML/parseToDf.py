@@ -1,159 +1,229 @@
 import  pandas as pd
 import os
 from bs4 import BeautifulSoup
+from multiprocessing.pool import ThreadPool
 
 class c_parseToDf():
     def __init__(self,rinok):
         self.rinok=rinok
-        self.df_elements = pd.DataFrame(
-            columns=['rinok','entity', 'targetnamespase', 'name', 'id', 'type', 'typeddomainref', 'substitutiongroup',
-                     'periodtype', 'abstract', 'nillable', 'creationdate', 'fromdate','enumdomain','enum2domain','enumlinkrole','enum2linkrole'])
+        self.df_rulenodes_dic = []
+        self.df_rulenodes_e_dic=[]
+        self.df_rulenodes_c_dic = []
+        self.df_rulenodes_p_dic = []
+        self.df_elements = pd.DataFrame(columns=['rinok','entity', 'targetnamespase', 'name', 'id', 'type',
+                                                 'typeddomainref', 'substitutiongroup','periodtype', 'abstract',
+                                                 'nillable', 'creationdate', 'fromdate','enumdomain','enum2domain',
+                                                 'enumlinkrole','enum2linkrole'])
         self.df_tables = pd.DataFrame(columns=['rinok', 'entity', 'targetnamespace', 'schemalocation', 'namespace'])
-        self.df_roletypes = pd.DataFrame(
-            columns=['rinok', 'entity', 'id', 'roleuri', 'definition', 'uo_pres', 'uo_def', 'uo_gen'])
-        self.df_locators = pd.DataFrame(
-            columns=['rinok', 'entity', 'locfrom', 'parentrole', 'type', 'href', 'label', 'title'])
-        self.df_labels = pd.DataFrame(
-            columns=['rinok', 'entity', 'parentrole', 'type', 'label', 'role', 'title', 'lang', 'id', 'text'])
+        self.df_roletypes = pd.DataFrame(columns=['rinok', 'entity', 'id', 'roleuri', 'definition', 'uo_pres',
+                                                  'uo_def', 'uo_gen'])
+        self.df_locators = pd.DataFrame(columns=['rinok', 'entity', 'locfrom', 'parentrole', 'type', 'href',
+                                                 'href_id', 'label', 'title'])
+        self.df_labels = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'type', 'label', 'role', 'title',
+                                               'lang', 'id', 'text'])
         self.df_arcs = pd.DataFrame(columns=['rinok', 'entity', 'arctype', 'parentrole', 'type', 'arcrole',
-                                             'arcfrom', 'arcto', 'title', 'usable', 'order', 'use', 'priority',
-                                             'closed'])
+                                             'arcfrom', 'arcto', 'title', 'usable','closed','contextelement','targetrole','order','preferredlabel', 'use', 'priority'
+                                        ])
         self.df_rolerefs = pd.DataFrame(columns=['rinok', 'entity', 'rolefrom', 'roleuri', 'type', 'href'])
         self.df_linkbaserefs = pd.DataFrame(columns=['rinok', 'entity', 'rolefrom', 'targetnamespace', 'type', 'href'])
         self.df_tableschemas = pd.DataFrame(
-            columns=['rinok', 'entity', 'rolefrom', 'parentrole', 'type', 'label', 'title', 'id', 'parentChildOrder'])
-        self.df_rulenodes = pd.DataFrame(
-            columns=['rinok', 'entity', 'rolefrom', 'parentrole', 'type', 'label', 'title', 'id', 'abstract',
-                     'merge', ])
+            columns=['rinok', 'entity', 'rolefrom', 'parentrole', 'type', 'label', 'title', 'id', 'parentchildorder'])
+
+    def parseRulenodes(self,path):
+        print(path)
+        soup=self.parsetag(path,'linkbase').find_all_next('table:rulenode')
+        df_rulenodes = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'abstract', 'merge', 'nexttag'])
+        df_rulenodes_e = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'rulenode_id', 'dimension', 'member'])
+        df_rulenodes_c = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'rulenode_id','value'])
+        df_rulenodes_p = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'rulenode_id','period_type','start','end'])
+        if soup:
+            for xx in soup:
+                parentrole = xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None
+                nexttag = xx.findChild()
+                if nexttag:
+                    df_rulenodes.loc[-1] = [self.rinok, os.path.basename(path),
+                                            parentrole,
+                                            xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
+                                            xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
+                                            xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
+                                            xx['id'] if 'id' in xx.attrs.keys() else None,
+                                            xx['abstract'] if 'abstract' in xx.attrs.keys() else None,
+                                            xx['merge'] if 'merge' in xx.attrs.keys() else None,
+                                            nexttag.name.replace('formula:','')
+                                            ]
+                    df_rulenodes.index = df_rulenodes.index + 1
+                    df_rulenodes = df_rulenodes.sort_index()
+                    if nexttag.name == 'formula:explicitdimension':
+                        df_rulenodes_e.loc[-1] = [self.rinok, os.path.basename(path),
+                                                         parentrole,
+                                                         xx['id'] if 'id' in xx.attrs.keys() else None,
+                                                         nexttag['dimension'] if 'dimension' in nexttag.attrs.keys() else None,
+                                                         nexttag.text.strip()
+                                                         ]
+                        df_rulenodes_e.index = df_rulenodes_e.index + 1
+                        df_rulenodes_e = df_rulenodes_e.sort_index()
+                    elif nexttag.name == 'formula:concept':
+                        df_rulenodes_c.loc[-1] = [self.rinok, os.path.basename(path),
+                                                       parentrole,
+                                                       xx['id'] if 'id' in xx.attrs.keys() else None,
+                                                       nexttag.text.strip()
+                                                       ]
+                        df_rulenodes_c.index = df_rulenodes_c.index + 1
+                        df_rulenodes_c = df_rulenodes_c.sort_index()
+                    elif nexttag.name == 'formula:period':
+                        df_rulenodes_p.loc[-1] = [self.rinok, os.path.basename(path),
+                                                       parentrole,
+                                                       xx['id'] if 'id' in xx.attrs.keys() else None,
+                                                       nexttag.find_next().name.replace('formula:',''),
+                                                       nexttag.find_next()['start'] if 'start' in nexttag.find_next().attrs.keys() else nexttag.find_next()['value'] if 'value' in nexttag.find_next().attrs.keys() else None,
+                                                       nexttag.find_next()['end'] if 'end' in nexttag.find_next().attrs.keys() else nexttag.find_next()['value'] if 'value' in nexttag.find_next().attrs.keys() else None
+                                                       ]
+                        df_rulenodes_p.index = df_rulenodes_p.index + 1
+                        df_rulenodes_p = df_rulenodes_p.sort_index()
+        self.df_rulenodes_dic.append(df_rulenodes)
+        self.df_rulenodes_c_dic.append(df_rulenodes_c)
+        self.df_rulenodes_p_dic.append(df_rulenodes_p)
+        self.df_rulenodes_e_dic.append(df_rulenodes_e)
+        #return {'df_rulenodes':df_rulenodes,'df_rulenodes_c':df_rulenodes_c,'df_rulenodes_p':df_rulenodes_p,'df_rulenodes_e':df_rulenodes_e}
+
+
+    def concatDfs(self,dfs):
+        return pd.concat(dfs, ignore_index=True).reset_index()
+
+
     def parseElements(self,dict_with_lbrfs, full_file_path):
+        #print(f'Elements - {full_file_path}')
         if dict_with_lbrfs:
-            print(f'Elements - {full_file_path}')
             for xx in dict_with_lbrfs:
                 self.df_elements.loc[-1] = [
                     self.rinok,os.path.basename(full_file_path),
-                    xx.parent['targetnamespace'] if 'targetnamespace' in xx.parent.attrs.keys() else '',
-                    xx['name'] if 'name' in xx.attrs else '',
-                    xx['id'] if 'id' in xx.attrs else '',
-                    xx['type'] if 'type' in xx.attrs else '',
-                    xx['xbrldt:typeddomainref'] if 'xbrldt:typeddomainref' in xx.attrs else '',
-                    xx['substitutiongroup'] if 'substitutiongroup' in xx.attrs else '',
-                    xx['xbrli:periodtype'] if 'xbrli:periodtype' in xx.attrs else '',
-                    xx['abstract'] if 'abstract' in xx.attrs else '',
-                    xx['nillable'] if 'nillable' in xx.attrs else '',
-                    xx['model:creationdate'] if 'model:creationdate' in xx.attrs else '',
-                    xx['model:fromdate'] if 'model:fromdate' in xx.attrs else '',
-                    xx['enum:domain'] if 'enum:domain' in xx.attrs else '',
-                    xx['enum2:domain'] if 'enum2:domain' in xx.attrs else '',
-                    xx['enum:linkrole'] if 'enum:linkrole' in xx.attrs else '',
-                    xx['enum2:linkrole'] if 'enum2:linkrole' in xx.attrs else ''
+                    xx.parent['targetnamespace'] if 'targetnamespace' in xx.parent.attrs.keys() else None,
+                    xx['name'] if 'name' in xx.attrs else None,
+                    xx['id'] if 'id' in xx.attrs else None,
+                    xx['type'] if 'type' in xx.attrs else None,
+                    xx['xbrldt:typeddomainref'] if 'xbrldt:typeddomainref' in xx.attrs else None,
+                    xx['substitutiongroup'] if 'substitutiongroup' in xx.attrs else None,
+                    xx['xbrli:periodtype'] if 'xbrli:periodtype' in xx.attrs else None,
+                    xx['abstract'] if 'abstract' in xx.attrs else None,
+                    xx['nillable'] if 'nillable' in xx.attrs else None,
+                    xx['model:creationdate'] if 'model:creationdate' in xx.attrs else None,
+                    xx['model:fromdate'] if 'model:fromdate' in xx.attrs else None,
+                    xx['enum:domain'] if 'enum:domain' in xx.attrs else None,
+                    xx['enum2:domain'] if 'enum2:domain' in xx.attrs else None,
+                    xx['enum:linkrole'] if 'enum:linkrole' in xx.attrs else None,
+                    xx['enum2:linkrole'] if 'enum2:linkrole' in xx.attrs else None
                 ]
                 self.df_elements.index = self.df_elements.index + 1
                 self.df_elements = self.df_elements.sort_index()
 
     def parseLinkbaserefs(self, dict_with_lbrfs, full_file_path, tag):
-        print(f'Linkbaserefs - {full_file_path}')
+        #print(f'Linkbaserefs - {full_file_path}')
         if dict_with_lbrfs:
             for xx in dict_with_lbrfs:
                 self.df_linkbaserefs.loc[-1] = [self.rinok, os.path.basename(full_file_path), tag,
-                                           xx.parent.parent.parent['targetnamespace'] if 'targetnamespace' in xx.parent.parent.parent.attrs.keys() else '',
-                                               xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else '',
-                                               xx['xlink:href'] if 'xlink:href' in xx.attrs.keys() else ''
+                                           xx.parent.parent.parent['targetnamespace'] if 'targetnamespace' in xx.parent.parent.parent.attrs.keys() else None,
+                                               xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
+                                               xx['xlink:href'] if 'xlink:href' in xx.attrs.keys() else None
                                            ]
                 self.df_linkbaserefs.index = self.df_linkbaserefs.index + 1
                 self.df_linkbaserefs = self.df_linkbaserefs.sort_index()
 
     def parseRoletypes(self,dict_with_rltps,full_file_path):
-        print(f'Roletypes - {full_file_path}')
+        #print(f'Roletypes - {full_file_path}')
         if dict_with_rltps:
             for xx in dict_with_rltps:
                 usedon = [yy.contents[0] for yy in xx.findAll('link:usedon')]
                 self.df_roletypes.loc[-1] = [self.rinok, os.path.basename(full_file_path),
-                                            xx['id'] if 'id' in xx.attrs.keys() else '',
-                                            xx['roleuri'] if 'roleuri' in xx.attrs.keys() else '',
-                                            xx.find_next('link:definition').contents[0] if xx.find_next('link:definition') else '',
-                                            1 if 'link:presentationLink' in usedon else 0, \
-                                            1 if 'link:definitionLink' in usedon else 0, \
+                                            xx['id'] if 'id' in xx.attrs.keys() else None,
+                                            xx['roleuri'] if 'roleuri' in xx.attrs.keys() else None,
+                                            xx.find_next('link:definition').contents[0] if xx.find_next('link:definition') else None,
+                                            1 if 'link:presentationlink' in usedon else 0, \
+                                            1 if 'link:definitionlink' in usedon else 0, \
                                             1 if 'gen:link' in usedon else 0]
                 self.df_roletypes.index = self.df_roletypes.index + 1
                 self.df_roletypes = self.df_roletypes.sort_index()
 
     def parseLabels(self,dict_with_lbls,full_file_path):
-        print(f'Labels - {full_file_path}')
+        #print(f'Labels - {full_file_path}')
         if dict_with_lbls:
             for xx in dict_with_lbls:
                 self.df_labels.loc[-1] = [
                     self.rinok, os.path.basename(full_file_path),
-                    xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else '',
-                    xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else '',
-                    xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else '',
-                    xx['xlink:role'] if 'xlink:role' in xx.attrs.keys() else '',
-                    xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else '',
-                    xx['xml:lang'] if 'xml:lang' in xx.attrs.keys() else '',
-                    xx['id'] if 'id' in xx.attrs.keys() else '',
+                    xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
+                    xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
+                    xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
+                    xx['xlink:role'] if 'xlink:role' in xx.attrs.keys() else None,
+                    xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
+                    xx['xml:lang'] if 'xml:lang' in xx.attrs.keys() else None,
+                    xx['id'] if 'id' in xx.attrs.keys() else None,
                     xx.text
                 ]
                 self.df_labels.index = self.df_labels.index + 1
                 self.df_labels = self.df_labels.sort_index()
 
     def parseLocators(self,dict_with_loc,full_file_path,tag):
-        print(f'Locators - {full_file_path}')
+        #print(f'Locators - {full_file_path}')
         if dict_with_loc:
             for xx in dict_with_loc:
                 self.df_locators.loc[-1] = [
                     self.rinok, os.path.basename(full_file_path), tag,
-                    xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else '',
-                    xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else '',
-                    xx['xlink:href'] if 'xlink:href' in xx.attrs.keys() else '',
-                    xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else '',
-                    xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else '']
+                    xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
+                    xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
+                    xx['xlink:href'] if 'xlink:href' in xx.attrs.keys() else None,
+                    xx['xlink:href'].split('#')[1] if 'xlink:href' in xx.attrs.keys() else None,
+                    xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
+                    xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None]
                 self.df_locators.index = self.df_locators.index + 1
                 self.df_locators = self.df_locators.sort_index()
 
     def parseRolerefs(self,dict_with_rlrfs,full_file_path,tag):
-        print(f'Rolerefs - {full_file_path}')
+        #print(f'Rolerefs - {full_file_path}')
         if dict_with_rlrfs:
             for xx in dict_with_rlrfs:
                 self.df_rolerefs.loc[-1] = [self.rinok, os.path.basename(full_file_path), tag,
-                                           xx['roleuri'] if 'roleuri' in xx.attrs.keys() else '',
-                                           xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else '',
-                                           xx['xlink:href'] if 'xlink:href' in xx.attrs.keys() else ''
+                                           xx['roleuri'] if 'roleuri' in xx.attrs.keys() else None,
+                                           xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
+                                           xx['xlink:href'] if 'xlink:href' in xx.attrs.keys() else None
                                            ]
                 self.df_rolerefs.index = self.df_rolerefs.index + 1
                 self.df_rolerefs = self.df_rolerefs.sort_index()
 
     def parseTableschemas(self,dict_with_tsch,full_file_path,tag):
-        print(f'Tableschemas - {full_file_path}')
+        #print(f'Tableschemas - {full_file_path}')
         if dict_with_tsch:
             for xx in dict_with_tsch:
                 self.df_tableschemas.loc[-1] = [self.rinok, os.path.basename(full_file_path), tag,
-                                                xx.parent['xlink:type'] if 'xlink:type' in xx.parent.attrs.keys() else '',
-                                                xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else '',
-                                                xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else '',
-                                                xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else '',
-                                                xx['id'] if 'id' in xx.attrs.keys() else '',
-                                                xx['parentchildorder'] if 'parentchildorder' in xx.attrs.keys() else ''
+                                                xx.parent['xlink:type'] if 'xlink:type' in xx.parent.attrs.keys() else None,
+                                                xx['xlink:role'] if 'xlink:role' in xx.attrs.keys() else None,
+                                                xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
+                                                xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
+                                                xx['id'] if 'id' in xx.attrs.keys() else None,
+                                                xx['parentchildorder'] if 'parentchildorder' in xx.attrs.keys() else None
                                            ]
                 self.df_tableschemas.index = self.df_tableschemas.index + 1
                 self.df_tableschemas = self.df_tableschemas.sort_index()
 
     def parseArcs(self,dict_with_arcs,full_file_path,tag):
-        print(f'Arcs - {full_file_path}')
+        #print(f'Arcs - {full_file_path}')
         if dict_with_arcs:
             for arc in dict_with_arcs:
                 self.df_arcs.loc[-1] = [
                     self.rinok, os.path.basename(full_file_path),
                     tag,
-                    arc.parent['xlink:role'] if 'xlink:role' in arc.parent.attrs.keys() else '',
-                    arc['xlink:type'] if 'xlink:type' in arc.attrs.keys() else '',
-                    arc['xlink:arcrole'] if 'xlink:arcrole' in arc.attrs.keys() else '',
-                    arc['xlink:from'] if 'xlink:from' in arc.attrs.keys() else '',
-                    arc['xlink:to'] if 'xlink:to' in arc.attrs.keys() else '',
-                    arc['xlink:title'] if 'xlink:title' in arc.attrs.keys() else '',
-                    arc['xbrldt:usable'] if 'xbrldt:usable' in arc.attrs.keys() else '',
-                    arc['order'] if 'order' in arc.attrs.keys() else '',
-                    arc['use'] if 'use' in arc.attrs.keys() else '',
-                    arc['priority'] if 'priority' in arc.attrs.keys() else '',
-                    arc['closed'] if 'closed' in arc.attrs.keys() else ''
+                    arc.parent['xlink:role'] if 'xlink:role' in arc.parent.attrs.keys() else None,
+                    arc['xlink:type'] if 'xlink:type' in arc.attrs.keys() else None,
+                    arc['xlink:arcrole'] if 'xlink:arcrole' in arc.attrs.keys() else None,
+                    arc['xlink:from'] if 'xlink:from' in arc.attrs.keys() else None,
+                    arc['xlink:to'] if 'xlink:to' in arc.attrs.keys() else None,
+                    arc['xlink:title'] if 'xlink:title' in arc.attrs.keys() else None,
+                    arc['xbrldt:usable'] if 'xbrldt:usable' in arc.attrs.keys() else None,
+                    arc['xbrldt:closed'] if 'xbrldt:closed' in arc.attrs.keys() else None,
+                    arc['xbrldt:contextelement'] if 'xbrldt:contextelement' in arc.attrs.keys() else None,
+                    arc['xbrldt:targetrole'] if 'xbrldt:targetrole' in arc.attrs.keys() else None,
+                    arc['order'] if 'order' in arc.attrs.keys() else None,
+                    arc['preferredlabel'] if 'preferredlabel' in arc.attrs.keys() else None,
+                    arc['use'] if 'use' in arc.attrs.keys() else None,
+                    arc['priority'] if 'priority' in arc.attrs.keys() else None
                 ]
                 self.df_arcs.index = self.df_arcs.index + 1
                 self.df_arcs = self.df_arcs.sort_index()

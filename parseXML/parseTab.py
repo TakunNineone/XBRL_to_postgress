@@ -1,11 +1,15 @@
 import os
+
+import pandas as pd
 from bs4 import BeautifulSoup
 import warnings
 import parseToDf
 warnings.filterwarnings("ignore")
+from multiprocessing.pool import ThreadPool
 
 class c_parseFormula():
     def __init__(self,taxonomy,rinok_folder,rinok):
+        self.tags=[]
         self.rinok=rinok
         self.path_tax=f'{os.getcwd()}\\{taxonomy}\\'
         self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\nso\\{rinok_folder}\\rep\\2023-03-31\\'
@@ -47,8 +51,7 @@ class c_parseFormula():
 
     def parsetab(self):
         for index, row in self.df.df_tables.iterrows():
-            # if 'sr_0420501' in row['schemalocation']:
-            #     print(row['schemalocation'])
+            # if 'SR_0420312' in row['schemalocation']:
             if row['schemalocation']:
                 tab_temp=f"{row['namespace']}\\"
                 schema_temp=row['schemalocation']
@@ -60,34 +63,48 @@ class c_parseFormula():
                 self.df.parseLinkbaserefs(soup.find_all('link:linkbaseref'),path_xsd,'maintabxsd')
 
                 linkbaserefs = soup.find_all('link:linkbaseref')
-                for yy in linkbaserefs:
-                    if 'definition.xml' in yy['xlink:href']:
-                        path_def=self.path_tax+tab_temp.replace('http://','')+yy['xlink:href']
-                        soup_def=self.df.parsetag(path_def,'link:linkbase')
-                        self.df.parseRolerefs(soup_def.find_all('link:roleref'),path_def,'definition')
-                        self.df.parseLocators(soup_def.find_all('link:loc'),path_def,'definition')
-                        self.df.parseArcs(soup_def.find_all('link:definitionarc'),path_def,'definition')
+                rend=[f"{self.path_tax}{tab_temp.replace('http://','')}{yy['xlink:href']}" for yy in linkbaserefs if 'rend.xml' in yy['xlink:href']]
+                with ThreadPool(processes=20) as pool:
+                    pool.map(self.df.parseRulenodes, rend)
 
-                    if 'presentation.xml' in yy['xlink:href']:
-                        path_pres=self.path_tax+tab_temp.replace('http://','')+yy['xlink:href']
-                        if self.df.parsetag(path_pres,'link:linkbase'):
-                            soup_pres=self.df.parsetag(path_pres,'link:linkbase')
-                            self.df.parseRolerefs(soup_pres.find_all('link:roleref'),path_pres,'presentation')
-                            self.df.parseLocators(soup_pres.find_all('link:loc'),path_pres,'presentation')
-                            self.df.parseArcs(soup_pres.find_all('link:presentationarc'),path_pres,'presentation')
-                        else:
-                            soup_pres = self.df.parsetag(path_pres, 'linkbase')
-                            self.df.parseRolerefs(soup_pres.find_all('roleref'), path_pres, 'presentation')
-                            self.df.parseLocators(soup_pres.find_all('loc'), path_pres, 'presentation')
-                            self.df.parseArcs(soup_pres.find_all('presentationarc'), path_pres, 'presentation')
 
-                    if 'lab.xml' in yy['xlink:href'] or 'rend.xml' in yy['xlink:href']:
-                        path_labrend=f"{self.path_tax}{tab_temp.replace('http://','')}{yy['xlink:href']}"
-                        soup_labrend=self.df.parsetag(path_labrend,'linkbase')
-                        if 'lab' in yy['xlink:href']:
-                            self.parselab(soup_labrend,path_labrend)
-                        elif 'rend' in yy['xlink:href']:
-                            self.parserend(soup_labrend,path_labrend)
+                # for yy in linkbaserefs:
+                #     # if yy['xlink:href']=='SR_0420312-rend.xml':
+                #     if yy['xlink:href']:
+                        # if 'definition.xml' in yy['xlink:href']:
+                        #     path_def=self.path_tax+tab_temp.replace('http://','')+yy['xlink:href']
+                        #     soup_def=self.df.parsetag(path_def,'link:linkbase')
+                        #     self.df.parseRolerefs(soup_def.find_all('link:roleref'),path_def,'definition')
+                        #     self.df.parseLocators(soup_def.find_all('link:loc'),path_def,'definition')
+                        #     self.df.parseArcs(soup_def.find_all('link:definitionarc'),path_def,'definition')
+                        #
+                        # if 'presentation.xml' in yy['xlink:href']:
+                        #     path_pres=self.path_tax+tab_temp.replace('http://','')+yy['xlink:href']
+                        #     if self.df.parsetag(path_pres,'link:linkbase'):
+                        #         soup_pres=self.df.parsetag(path_pres,'link:linkbase')
+                        #         self.df.parseRolerefs(soup_pres.find_all('link:roleref'),path_pres,'presentation')
+                        #         self.df.parseLocators(soup_pres.find_all('link:loc'),path_pres,'presentation')
+                        #         self.df.parseArcs(soup_pres.find_all('link:presentationarc'),path_pres,'presentation')
+                        #     else:
+                        #         soup_pres = self.df.parsetag(path_pres, 'linkbase')
+                        #         self.df.parseRolerefs(soup_pres.find_all('roleref'), path_pres, 'presentation')
+                        #         self.df.parseLocators(soup_pres.find_all('loc'), path_pres, 'presentation')
+                        #         self.df.parseArcs(soup_pres.find_all('presentationarc'), path_pres, 'presentation')
+
+                        # if 'lab.xml' in yy['xlink:href'] or 'rend.xml' in yy['xlink:href']:
+                        #     path_labrend=f"{self.path_tax}{tab_temp.replace('http://','')}{yy['xlink:href']}"
+                        #     soup_labrend=self.df.parsetag(path_labrend,'linkbase')
+                        #     if 'lab' in yy['xlink:href']:
+                        #         self.parselab(soup_labrend,path_labrend)
+                        #     elif 'rend' in yy['xlink:href']:
+                        #         self.parserend(soup_labrend,path_labrend)
+
+                        # if 'rend.xml' in yy['xlink:href']:
+                        #     print(yy['xlink:href'])
+                        #     path_labrend=f"{self.path_tax}{tab_temp.replace('http://','')}{yy['xlink:href']}"
+                        #     soup_labrend=self.df.parsetag(path_labrend,'linkbase')
+                        #     if 'rend' in yy['xlink:href']:
+                        #         self.parserend(soup_labrend,path_labrend)
 
 
     def parselab(self,soup,path):
@@ -103,6 +120,7 @@ class c_parseFormula():
         self.df.parseArcs(soup.find_all('table:tablebreakdownarc'),path,'table:tablebreakdownarc')
         self.df.parseArcs(soup.find_all_next('table:definitionnodesubtreearc'),path,'table:definitionnodesubtreearc')
 
+
     def startParse(self):
         self.parsesupport()
         self.parsetab()
@@ -113,4 +131,8 @@ if __name__ == "__main__":
     ss.parsenosupport()
     ss.parsesupport()
     ss.parsetab()
+    df_rulenodes=ss.df.concatDfs(ss.df.df_rulenodes_dic)
+    df_rulenodes_c=ss.df.concatDfs(ss.df.df_rulenodes_c_dic)
+    df_rulenodes_p=ss.df.concatDfs(ss.df.df_rulenodes_p_dic)
+    df_rulenodes_e=ss.df.concatDfs(ss.df.df_rulenodes_e_dic)
     None
