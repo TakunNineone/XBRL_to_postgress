@@ -23,8 +23,7 @@ class c_parseDic():
             self.path_label=f'{path_folder}{rinok}-dic-label.xml'
             self.path_definition=f'{path_folder}{rinok}-dic-definition.xml'
             self.path_pres=f'{path_folder}{rinok}-dic-presentation.xml'
-    def writeThread(self, func):
-        func()
+
 
     def parseDic(self):
         soup_dic = self.df.parsetag(self.path_dic, 'xsd:appinfo')
@@ -45,24 +44,24 @@ class c_parseDic():
         def t9(): self.df.parseRolerefs(soup_pres.find_all('link:roleref') if soup_pres else None, self.path_definition, 'presentation')
         def t10(): self.df.parseLocators(soup_pres.find_all_next('link:loc') if soup_pres else None, self.path_definition, 'presentation')
         def t11(): self.df.parseArcs(soup_pres.find_all_next('link:presentationarc') if soup_pres else None, self.path_label, 'presentation')
-        defs=[t1,t2,t3,t4,t5]
-        defs2 = [t6, t7, t8]
-        defs3=[t9,t10,t11]
-        with ThreadPool(processes=5) as pool:
-            pool.map(self.writeThread, defs)
-        with ThreadPool(processes=3) as pool:
-            pool.map(self.writeThread, defs2)
-        with ThreadPool(processes=3) as pool:
-            pool.map(self.writeThread, defs3)
+        defs=[t1,t2,t3,t4,t5,t6, t7, t8,t9,t10,t11]
+        with ThreadPool(processes=11) as pool:
+            pool.map(self.df.writeThread, defs)
 
         del soup_dic,soup_label,soup_def,soup_pres
         gc.collect()
 
     def startParse(self):
         self.parseDic()
+        return {'df_roletypes':self.df.concatDfs(self.df.df_roletypes_Dic),
+                'df_elements': self.df.concatDfs(self.df.df_elements_Dic),
+                'df_locators':self.df.concatDfs(self.df.df_locators_Dic),
+                'df_arcs':self.df.concatDfs(self.df.df_arcs_Dic),
+                'df_labels':self.df.concatDfs(self.df.df_labels_Dic),
+                'df_rolerefs':self.df.concatDfs(self.df.df_rolerefs_Dic)}
 
 if __name__ == "__main__":
-    ss=c_parseDic('final_5_2','purcb','purcb')
-    ss.parseDic()
+    ss=c_parseDic('final_5_2','npf','npf')
+    dfs=ss.startParse()
 
     None

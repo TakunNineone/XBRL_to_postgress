@@ -1,3 +1,5 @@
+import gc
+
 import  pandas as pd
 import os
 from bs4 import BeautifulSoup
@@ -6,31 +8,22 @@ from multiprocessing.pool import ThreadPool
 class c_parseToDf():
     def __init__(self,rinok):
         self.rinok=rinok
-        self.df_rulenodes_dic = []
-        self.df_rulenodes_e_dic=[]
-        self.df_rulenodes_c_dic = []
-        self.df_rulenodes_p_dic = []
-        self.df_elements = pd.DataFrame(columns=['rinok','entity', 'targetnamespase', 'name', 'id', 'type',
-                                                 'typeddomainref', 'substitutiongroup','periodtype', 'abstract',
-                                                 'nillable', 'creationdate', 'fromdate','enumdomain','enum2domain',
-                                                 'enumlinkrole','enum2linkrole'])
+        self.df_rulenodes_Dic = []
+        self.df_rulenodes_e_Dic=[]
+        self.df_rulenodes_c_Dic = []
+        self.df_rulenodes_p_Dic = []
+        self.df_elements_Dic=[]
+        self.df_roletypes_Dic=[]
+        self.df_locators_Dic=[]
+        self.df_arcs_Dic=[]
+        self.df_labels_Dic=[]
+        self.df_rolerefs_Dic=[]
+        self.df_tableschemas_Dic=[]
+        self.df_linkbaserefs_Dic=[]
+
         self.df_tables = pd.DataFrame(columns=['rinok', 'entity', 'targetnamespace', 'schemalocation', 'namespace'])
-        self.df_roletypes = pd.DataFrame(columns=['rinok', 'entity', 'id', 'roleuri', 'definition', 'uo_pres',
-                                                  'uo_def', 'uo_gen'])
-        self.df_locators = pd.DataFrame(columns=['rinok', 'entity', 'locfrom', 'parentrole', 'type', 'href',
-                                                 'href_id', 'label', 'title'])
-        self.df_labels = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'type', 'label', 'role', 'title',
-                                               'lang', 'id', 'text'])
-        self.df_arcs = pd.DataFrame(columns=['rinok', 'entity', 'arctype', 'parentrole', 'type', 'arcrole',
-                                             'arcfrom', 'arcto', 'title', 'usable','closed','contextelement','targetrole','order','preferredlabel', 'use', 'priority'
-                                        ])
-        self.df_rolerefs = pd.DataFrame(columns=['rinok', 'entity', 'rolefrom', 'roleuri', 'type', 'href'])
-        self.df_linkbaserefs = pd.DataFrame(columns=['rinok', 'entity', 'rolefrom', 'targetnamespace', 'type', 'href'])
-        self.df_tableschemas = pd.DataFrame(
-            columns=['rinok', 'entity', 'rolefrom', 'parentrole', 'type', 'label', 'title', 'id', 'parentchildorder'])
 
     def parseRulenodes(self,path):
-        print(path)
         soup=self.parsetag(path,'linkbase').find_all_next('table:rulenode')
         df_rulenodes = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'abstract', 'merge', 'nexttag'])
         df_rulenodes_e = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'rulenode_id', 'dimension', 'member'])
@@ -80,22 +73,21 @@ class c_parseToDf():
                                                        ]
                         df_rulenodes_p.index = df_rulenodes_p.index + 1
                         df_rulenodes_p = df_rulenodes_p.sort_index()
-        self.df_rulenodes_dic.append(df_rulenodes)
-        self.df_rulenodes_c_dic.append(df_rulenodes_c)
-        self.df_rulenodes_p_dic.append(df_rulenodes_p)
-        self.df_rulenodes_e_dic.append(df_rulenodes_e)
-        #return {'df_rulenodes':df_rulenodes,'df_rulenodes_c':df_rulenodes_c,'df_rulenodes_p':df_rulenodes_p,'df_rulenodes_e':df_rulenodes_e}
-
-
-    def concatDfs(self,dfs):
-        return pd.concat(dfs, ignore_index=True).reset_index()
-
+        self.appendDfs_Dic(self.df_rulenodes_Dic,df_rulenodes)
+        self.appendDfs_Dic(self.df_rulenodes_c_Dic, df_rulenodes_c)
+        self.appendDfs_Dic(self.df_rulenodes_p_Dic, df_rulenodes_p)
+        self.appendDfs_Dic(self.df_rulenodes_e_Dic, df_rulenodes_e)
+        del df_rulenodes_e,df_rulenodes_p,df_rulenodes_c,df_rulenodes
 
     def parseElements(self,dict_with_lbrfs, full_file_path):
         #print(f'Elements - {full_file_path}')
+        df_elements = pd.DataFrame(columns=['rinok', 'entity', 'targetnamespase', 'name', 'id', 'type',
+                                                 'typeddomainref', 'substitutiongroup', 'periodtype', 'abstract',
+                                                 'nillable', 'creationdate', 'fromdate', 'enumdomain', 'enum2domain',
+                                                 'enumlinkrole', 'enum2linkrole'])
         if dict_with_lbrfs:
             for xx in dict_with_lbrfs:
-                self.df_elements.loc[-1] = [
+                df_elements.loc[-1] = [
                     self.rinok,os.path.basename(full_file_path),
                     xx.parent['targetnamespace'] if 'targetnamespace' in xx.parent.attrs.keys() else None,
                     xx['name'] if 'name' in xx.attrs else None,
@@ -113,41 +105,51 @@ class c_parseToDf():
                     xx['enum:linkrole'] if 'enum:linkrole' in xx.attrs else None,
                     xx['enum2:linkrole'] if 'enum2:linkrole' in xx.attrs else None
                 ]
-                self.df_elements.index = self.df_elements.index + 1
-                self.df_elements = self.df_elements.sort_index()
+                df_elements.index = df_elements.index + 1
+                df_elements = df_elements.sort_index()
+        self.appendDfs_Dic(self.df_elements_Dic, df_elements)
+        del df_elements
 
     def parseLinkbaserefs(self, dict_with_lbrfs, full_file_path, tag):
         #print(f'Linkbaserefs - {full_file_path}')
+        df_linkbaserefs = pd.DataFrame(columns=['rinok', 'entity', 'rolefrom', 'targetnamespace', 'type', 'href'])
         if dict_with_lbrfs:
             for xx in dict_with_lbrfs:
-                self.df_linkbaserefs.loc[-1] = [self.rinok, os.path.basename(full_file_path), tag,
+                df_linkbaserefs.loc[-1] = [self.rinok, os.path.basename(full_file_path), tag,
                                            xx.parent.parent.parent['targetnamespace'] if 'targetnamespace' in xx.parent.parent.parent.attrs.keys() else None,
                                                xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
                                                xx['xlink:href'] if 'xlink:href' in xx.attrs.keys() else None
                                            ]
-                self.df_linkbaserefs.index = self.df_linkbaserefs.index + 1
-                self.df_linkbaserefs = self.df_linkbaserefs.sort_index()
+                df_linkbaserefs.index = df_linkbaserefs.index + 1
+                df_linkbaserefs = df_linkbaserefs.sort_index()
+        self.appendDfs_Dic(self.df_linkbaserefs_Dic, df_linkbaserefs)
+        del df_linkbaserefs
 
     def parseRoletypes(self,dict_with_rltps,full_file_path):
         #print(f'Roletypes - {full_file_path}')
+        df_roletypes = pd.DataFrame(columns=['rinok', 'entity', 'id', 'roleuri', 'definition', 'uo_pres','uo_def', 'uo_gen'])
         if dict_with_rltps:
             for xx in dict_with_rltps:
                 usedon = [yy.contents[0] for yy in xx.findAll('link:usedon')]
-                self.df_roletypes.loc[-1] = [self.rinok, os.path.basename(full_file_path),
+                df_roletypes.loc[-1] = [self.rinok, os.path.basename(full_file_path),
                                             xx['id'] if 'id' in xx.attrs.keys() else None,
                                             xx['roleuri'] if 'roleuri' in xx.attrs.keys() else None,
                                             xx.find_next('link:definition').contents[0] if xx.find_next('link:definition') else None,
                                             1 if 'link:presentationlink' in usedon else 0, \
                                             1 if 'link:definitionlink' in usedon else 0, \
                                             1 if 'gen:link' in usedon else 0]
-                self.df_roletypes.index = self.df_roletypes.index + 1
-                self.df_roletypes = self.df_roletypes.sort_index()
+                df_roletypes.index = df_roletypes.index + 1
+                df_roletypes = df_roletypes.sort_index()
+        self.appendDfs_Dic(self.df_roletypes_Dic, df_roletypes)
+        del df_roletypes
 
     def parseLabels(self,dict_with_lbls,full_file_path):
         #print(f'Labels - {full_file_path}')
+        df_labels = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'type', 'label', 'role', 'title',
+                                               'lang', 'id', 'text'])
         if dict_with_lbls:
             for xx in dict_with_lbls:
-                self.df_labels.loc[-1] = [
+                df_labels.loc[-1] = [
                     self.rinok, os.path.basename(full_file_path),
                     xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
                     xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
@@ -158,14 +160,17 @@ class c_parseToDf():
                     xx['id'] if 'id' in xx.attrs.keys() else None,
                     xx.text
                 ]
-                self.df_labels.index = self.df_labels.index + 1
-                self.df_labels = self.df_labels.sort_index()
+                df_labels.index = df_labels.index + 1
+                df_labels = df_labels.sort_index()
+        self.appendDfs_Dic(self.df_labels_Dic, df_labels)
+        del df_labels
 
     def parseLocators(self,dict_with_loc,full_file_path,tag):
+        df_locators = pd.DataFrame(columns=['rinok', 'entity', 'locfrom', 'parentrole', 'type', 'href','href_id', 'label', 'title'])
         #print(f'Locators - {full_file_path}')
         if dict_with_loc:
             for xx in dict_with_loc:
-                self.df_locators.loc[-1] = [
+                df_locators.loc[-1] = [
                     self.rinok, os.path.basename(full_file_path), tag,
                     xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
                     xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
@@ -173,26 +178,33 @@ class c_parseToDf():
                     xx['xlink:href'].split('#')[1] if 'xlink:href' in xx.attrs.keys() else None,
                     xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
                     xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None]
-                self.df_locators.index = self.df_locators.index + 1
-                self.df_locators = self.df_locators.sort_index()
+                df_locators.index = df_locators.index + 1
+                df_locators = df_locators.sort_index()
+        self.appendDfs_Dic(self.df_locators_Dic, df_locators)
+        del df_locators
 
     def parseRolerefs(self,dict_with_rlrfs,full_file_path,tag):
         #print(f'Rolerefs - {full_file_path}')
+        df_rolerefs = pd.DataFrame(columns=['rinok', 'entity', 'rolefrom', 'roleuri', 'type', 'href'])
         if dict_with_rlrfs:
             for xx in dict_with_rlrfs:
-                self.df_rolerefs.loc[-1] = [self.rinok, os.path.basename(full_file_path), tag,
+                df_rolerefs.loc[-1] = [self.rinok, os.path.basename(full_file_path), tag,
                                            xx['roleuri'] if 'roleuri' in xx.attrs.keys() else None,
                                            xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
                                            xx['xlink:href'] if 'xlink:href' in xx.attrs.keys() else None
                                            ]
-                self.df_rolerefs.index = self.df_rolerefs.index + 1
-                self.df_rolerefs = self.df_rolerefs.sort_index()
+                df_rolerefs.index = df_rolerefs.index + 1
+                df_rolerefs = df_rolerefs.sort_index()
+        self.appendDfs_Dic(self.df_rolerefs_Dic, df_rolerefs)
+        del df_rolerefs
 
     def parseTableschemas(self,dict_with_tsch,full_file_path,tag):
         #print(f'Tableschemas - {full_file_path}')
+        df_tableschemas = pd.DataFrame(
+            columns=['rinok', 'entity', 'rolefrom', 'parentrole', 'type', 'label', 'title', 'id', 'parentchildorder'])
         if dict_with_tsch:
             for xx in dict_with_tsch:
-                self.df_tableschemas.loc[-1] = [self.rinok, os.path.basename(full_file_path), tag,
+                df_tableschemas.loc[-1] = [self.rinok, os.path.basename(full_file_path), tag,
                                                 xx.parent['xlink:type'] if 'xlink:type' in xx.parent.attrs.keys() else None,
                                                 xx['xlink:role'] if 'xlink:role' in xx.attrs.keys() else None,
                                                 xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
@@ -200,14 +212,20 @@ class c_parseToDf():
                                                 xx['id'] if 'id' in xx.attrs.keys() else None,
                                                 xx['parentchildorder'] if 'parentchildorder' in xx.attrs.keys() else None
                                            ]
-                self.df_tableschemas.index = self.df_tableschemas.index + 1
-                self.df_tableschemas = self.df_tableschemas.sort_index()
+                df_tableschemas.index = df_tableschemas.index + 1
+                df_tableschemas = df_tableschemas.sort_index()
+        self.appendDfs_Dic(self.df_tableschemas_Dic, df_tableschemas)
+        del df_tableschemas
 
     def parseArcs(self,dict_with_arcs,full_file_path,tag):
         #print(f'Arcs - {full_file_path}')
+        df_arcs = pd.DataFrame(columns=['rinok', 'entity', 'arctype', 'parentrole', 'type', 'arcrole',
+                                             'arcfrom', 'arcto', 'title', 'usable', 'closed', 'contextelement',
+                                             'targetrole', 'order', 'preferredlabel', 'use', 'priority'
+                                             ])
         if dict_with_arcs:
             for arc in dict_with_arcs:
-                self.df_arcs.loc[-1] = [
+                df_arcs.loc[-1] = [
                     self.rinok, os.path.basename(full_file_path),
                     tag,
                     arc.parent['xlink:role'] if 'xlink:role' in arc.parent.attrs.keys() else None,
@@ -225,8 +243,27 @@ class c_parseToDf():
                     arc['use'] if 'use' in arc.attrs.keys() else None,
                     arc['priority'] if 'priority' in arc.attrs.keys() else None
                 ]
-                self.df_arcs.index = self.df_arcs.index + 1
-                self.df_arcs = self.df_arcs.sort_index()
+                df_arcs.index = df_arcs.index + 1
+                df_arcs = df_arcs.sort_index()
+        self.appendDfs_Dic(self.df_arcs_Dic, df_arcs)
+        del df_arcs
+
+    def concatDfs(self,dfs):
+        try: ret=pd.concat(dfs).reset_index(drop=True)
+        except: ret=None
+        return ret
+
+    def writeThread(self, func):
+        func()
+
+    def appendDfs_Dic(self,df,df_to_append):
+        append=True
+        while append:
+            try:
+                df.append(df_to_append)
+                append=False
+            except:
+                None
 
     def parsetag(self,filepath,main_tree):
         with open(filepath,'rb') as f:
@@ -236,18 +273,3 @@ class c_parseToDf():
         soup_tree=soup_root.find_next(main_tree)
         return soup_tree
 
-    def returtDfs(self):
-        return (
-            {
-                'df_tables':self.df_tables,
-                'df_roletypes':self.df_roletypes,
-                'df_labels':self.df_labels,
-                'df_arcs':self.df_arcs,
-                'df_rolerefs':self.df_rolerefs,
-                'df_linkbaserefs':self.df_linkbaserefs,
-                'df_rulenodes':self.df_rulenodes,
-                'df_tableschemas':self.df_tableschemas,
-                'df_elements':self.df_elements,
-                'df_locators':self.df_locators
-            }
-        )
