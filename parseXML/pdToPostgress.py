@@ -1,9 +1,10 @@
 import gc
-
+import datetime
 import parseDicNew,parseTab
 import psycopg2
 from sqlalchemy import create_engine
 
+print('begin',datetime.datetime.now())
 conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/testdb'
 
 db = create_engine(conn_string)
@@ -18,9 +19,21 @@ print(conn1)
 
 conn1.autocommit = True
 cursor = conn1.cursor()
-#['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']
-for rinok in [['purcb','purcb']]:
-    print(rinok)
+#['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']
+for rinok in [['npf','npf']]:
+    # print(rinok)
+    # ss = parseTab.c_parseTab('final_5_2', rinok[0], rinok[1])
+    # df_list=ss.startParse()
+    # str_headers=''
+    # for xx in df_list.keys():
+    #     headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
+    #     for hh in headers:
+    #         str_headers = str_headers + hh + '\n'
+    #     str_headers = str_headers.strip()[:-1]
+    #     df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
+    # del df_list
+    # gc.collect()
+
     ss=parseDicNew.c_parseDic('final_5_2',rinok[0],rinok[1])
     df_list=ss.startParse()
     print(df_list.keys())
@@ -36,7 +49,6 @@ for rinok in [['purcb','purcb']]:
 
     ss=parseTab.c_parseTab('final_5_2',rinok[0],rinok[1])
     df_list=ss.startParse()
-    print(df_list.keys())
     str_headers=''
     for xx in df_list.keys():
         headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
@@ -49,7 +61,6 @@ for rinok in [['purcb','purcb']]:
 
 ss=parseDicNew.c_parseDic('final_5_2','udr\\dim','dim')
 df_list=ss.startParse()
-
 print(df_list.keys())
 str_headers=''
 for xx in df_list.keys():
@@ -58,7 +69,6 @@ for xx in df_list.keys():
         str_headers = str_headers + hh + '\n'
     str_headers = str_headers.strip()[:-1]
     df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
-
 del df_list
 gc.collect()
 
@@ -72,6 +82,35 @@ for xx in df_list.keys():
         str_headers = str_headers + hh + '\n'
     str_headers = str_headers.strip()[:-1]
     df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
+del df_list
+gc.collect()
 
-conn1.commit()
-conn1.close()
+ss=parseDicNew.c_parseDic('final_5_2','bfo\\dict','dictionary')
+df_list=ss.startParse()
+print(df_list.keys())
+str_headers=''
+for xx in df_list.keys():
+    headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
+    for hh in headers:
+        str_headers = str_headers + hh + '\n'
+    str_headers = str_headers.strip()[:-1]
+    df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
+del df_list
+gc.collect()
+
+# ss=parseTab.c_parseTab('final_5_2','bfo','bfo')
+# df_list=ss.startParse()
+# print(df_list.keys())
+# str_headers=''
+# for xx in df_list.keys():
+#     headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
+#     for hh in headers:
+#         str_headers = str_headers + hh + '\n'
+#     str_headers = str_headers.strip()[:-1]
+#     df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
+# del df_list
+# gc.collect()
+
+# conn1.commit()
+# conn1.close()
+print('end',datetime.datetime.now())

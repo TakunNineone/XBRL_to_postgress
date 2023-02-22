@@ -6,7 +6,6 @@ from multiprocessing.pool import ThreadPool
 
 class c_parseDic():
     def __init__(self,taxonomy,rinok_folder,rinok):
-        self.df = parseToDf.c_parseToDf(rinok)
         if rinok_folder in ('udr\\dim','udr\\dom'):
             path_folder=f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\{rinok_folder}\\'
             self.path_dic = f'{path_folder}{rinok}-int.xsd'
@@ -15,9 +14,20 @@ class c_parseDic():
             self.path_pres = f'{path_folder}{rinok}-dic-presentation.xml'
             self.rinok = rinok
             self.rinok_folder = rinok_folder
+            self.df = parseToDf.c_parseToDf(self.rinok)
+        elif rinok_folder == 'bfo\\dict':
+            path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\{rinok_folder}\\'
+            self.path_dic = f'{path_folder}{rinok}.xsd'
+            self.path_label = f'{path_folder}{rinok}-label.xml'
+            self.path_definition = f'{path_folder}{rinok}-definition.xml'
+            self.path_pres = f'{path_folder}{rinok}-presentation.xml'
+            self.rinok = 'bfo'
+            self.rinok_folder = rinok_folder
+            self.df = parseToDf.c_parseToDf(self.rinok)
         else:
             self.rinok_folder=rinok_folder
             self.rinok=rinok
+            self.df = parseToDf.c_parseToDf(self.rinok)
             path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\nso\\{rinok_folder}\\dic\\'
             self.path_dic=f'{path_folder}{rinok}-dic.xsd'
             self.path_label=f'{path_folder}{rinok}-dic-label.xml'
