@@ -95,8 +95,9 @@ class c_parseTab():
                 def t11(): self.df.parse_edimensions(soup_formula,path)
                 def t12(): self.df.parse_aspectcovers(soup_formula.find_all_next('asf:aspectcover'),path)
                 t_all=[t0,t1,t2,t3,t3_2,t4,t5,t6,t7,t8,t9,t10,t11,t12]
+                # t_all = [t2, t3, t3_2]
 
-                with ThreadPool(processes=13) as pool:
+                with ThreadPool(processes=14) as pool:
                    pool.map(self.df.writeThread, t_all)
         rend = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
                 re.findall(r'rend\S*.xml',yy['xlink:href'])]
@@ -198,7 +199,7 @@ class c_parseTab():
                 'df_va_factvars':self.df.concatDfs(self.df.df_va_factvars_Dic),
                 'df_va_assertions':self.df.concatDfs(self.df.df_va_assertions_Dic),
                 'df_va_generals': self.df.concatDfs(self.df.df_va_generals_Dic),
-                'df_va_aspectcovers': self.df.concatDfs(self.df.df_va_aspectcovers_Dic)
+                # 'df_va_aspectcovers': self.df.concatDfs(self.df.df_va_aspectcovers_Dic)
                 }
 
 
