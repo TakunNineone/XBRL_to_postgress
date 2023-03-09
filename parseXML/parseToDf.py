@@ -28,10 +28,12 @@ class c_parseToDf():
         self.df_va_factvars_Dic = []
         self.df_va_assertions_Dic = []
         self.df_va_generals_Dic=[]
+        self.df_va_aspectcovers_Dic=[]
 
         self.df_tables = pd.DataFrame(columns=['rinok', 'entity', 'targetnamespace', 'schemalocation', 'namespace'])
 
     def parse_assertions(self,soup,path):
+        print(f'parse_assertions - {path}')
         df_va_assertions = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'test','variables', 'aspectmodel','implicitfiltering'])
         soup=soup.find_all_next('va:valueassertion')
         for xx in soup:
@@ -60,7 +62,29 @@ class c_parseToDf():
             df_va_assertions = df_va_assertions.sort_index()
         self.df_va_assertions_Dic.append(df_va_assertions)
 
+    def parse_aspectcovers(self,soup,path):
+        print(f'parse_aspectcovers - {path}')
+        df_va_aspectcovers=pd.DataFrame(columns=['rinok', 'entity', 'parentrole','type', 'label', 'title', 'id','aspects'])
+        for xx in soup:
+            aspects = [yy.text for yy in xx.find_all('asf:aspect')]
+            aspects_str=''
+            for yy in aspects:
+                aspects_str=aspects_str+yy+' '
+            aspects_str=aspects_str.strip()
+            df_va_aspectcovers.loc[-1] = [self.rinok, os.path.basename(path),
+                                      xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
+                                      xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
+                                      xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
+                                      xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
+                                      xx['id'] if 'id' in xx.attrs.keys() else None,
+                                      aspects_str
+                                      ]
+            df_va_aspectcovers.index = df_va_aspectcovers.index + 1
+            df_va_aspectcovers = df_va_aspectcovers.sort_index()
+        self.df_va_aspectcovers_Dic.append(df_va_aspectcovers)
+
     def parse_generals(self,soup,path):
+        print(f'parse_generals - {path}')
         df_va_generals=pd.DataFrame(columns=['rinok', 'entity', 'parentrole','label','title','id','test'])
         for xx in soup:
             df_va_generals.loc[-1] = [self.rinok, os.path.basename(path),
@@ -75,6 +99,7 @@ class c_parseToDf():
         self.df_va_generals_Dic.append(df_va_generals)
 
     def parse_factvars(self,soup,path):
+        print(f'parse_factvars - {path}')
         df_va_factvars = pd.DataFrame( columns=['rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'bindassequence','fallbackvalue'])
         soup=soup.find_all_next('variable:factvariable')
         for xx in soup:
@@ -92,6 +117,7 @@ class c_parseToDf():
         self.df_va_factvars_Dic.append(df_va_factvars)
 
     def parse_concepts(self,soup,path):
+        print(f'parse_concepts - {path}')
         df_va_concepts = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'value'])
         soup=soup.find_all_next('cf:conceptname')
         for xx in soup:
@@ -108,6 +134,7 @@ class c_parseToDf():
         self.df_va_concepts_Dic.append(df_va_concepts)
 
     def parse_tdimensions(self,soup,path):
+        print(f'parse_tdimensions - {path}')
         df_va_tdimensions = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'value'])
         soup=soup.find_all_next('df:typeddimension')
         for xx in soup:
@@ -124,6 +151,7 @@ class c_parseToDf():
         self.df_va_tdimensions_Dic.append(df_va_tdimensions)
 
     def parse_edimensions(self,soup,path):
+        print(f'parse_edimensions - {path}')
         df_va_edimensions = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'dimension'])
         df_va_edmembers = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'dimension_id', 'member'])
         soup=soup.find_all_next('df:explicitdimension')
@@ -151,7 +179,9 @@ class c_parseToDf():
         self.df_va_edmembers_Dic.append(df_va_edmembers)
         self.df_va_edimensions_Dic.append(df_va_edimensions)
 
+
     def parse_covers(self,soup,path):
+        print(f'parse_covers - {path}')
         df_va_covers = pd.DataFrame(columns=['rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'values'])
         soup = soup.find_all_next('df:typeddimension')
         for xx in soup:
@@ -375,13 +405,15 @@ class c_parseToDf():
         del df_tableschemas
 
     def parseArcs(self,dict_with_arcs,full_file_path,tag):
-        #print(f'Arcs - {full_file_path}')
+        print(f'Arcs - {full_file_path}')
         df_arcs = pd.DataFrame(columns=['rinok', 'entity', 'arctype', 'parentrole', 'type', 'arcrole',
                                              'arcfrom', 'arcto', 'title', 'usable', 'closed', 'contextelement',
                                              'targetrole', 'order', 'preferredlabel', 'use', 'priority','complement','cover','name'
                                              ])
+        print('Количество арок',len(dict_with_arcs))
         if dict_with_arcs:
             for arc in dict_with_arcs:
+                print('Арка',arc)
                 df_arcs.loc[-1] = [
                     self.rinok, os.path.basename(full_file_path),
                     tag,
