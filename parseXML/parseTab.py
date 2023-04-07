@@ -12,14 +12,16 @@ class c_parseTab():
     def __init__(self,taxonomy,rinok_folder,rinok):
         if rinok_folder=='bfo':
             self.rinok = 'bfo'
+            self.version=taxonomy
             self.path_tax = f'{os.getcwd()}\\{taxonomy}\\'
             self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\{rinok_folder}\\rep\\2023-03-31\\'
-            self.df = parseToDf.c_parseToDf(rinok)
+            self.df = parseToDf.c_parseToDf(taxonomy,rinok)
         else:
             self.rinok=rinok
+            self.version = taxonomy
             self.path_tax=f'{os.getcwd()}\\{taxonomy}\\'
             self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\nso\\{rinok_folder}\\rep\\2023-03-31\\'
-            self.df=parseToDf.c_parseToDf(rinok)
+            self.df=parseToDf.c_parseToDf(taxonomy,rinok)
 
     def parsesupport(self):
         path_supp=self.path_folder+'\\ep\\'
@@ -33,7 +35,7 @@ class c_parseTab():
         namesps=soup.find_all('xsd:import')
         for xx in namesps:
             if 'www.cbr.ru' in xx['namespace']:
-                self.df.df_tables.loc[-1] = [self.rinok, os.path.basename(path_file),
+                self.df.df_tables.loc[-1] = [self.version,self.rinok, os.path.basename(path_file),
                                           soup['targetnamespace'],xx['schemalocation'],xx['namespace']]
                 self.df.df_tables.index = self.df.df_tables.index + 1
                 self.df.df_tables = self.df.df_tables.sort_index()
@@ -49,7 +51,7 @@ class c_parseTab():
                 namesps = soup.find_all('xsd:import')
                 for xx in namesps:
                     if 'www.cbr.ru' in xx['namespace']:
-                        self.df.df_tables.loc[-1] = [self.rinok, os.path.basename(path_file),
+                        self.df.df_tables.loc[-1] = [self.version, self.rinok, os.path.basename(path_file),
                                                      soup['targetnamespace'], xx['schemalocation'], xx['namespace']]
                         self.df.df_tables.index = self.df.df_tables.index + 1
                         self.df.df_tables = self.df.df_tables.sort_index()
@@ -69,7 +71,8 @@ class c_parseTab():
         soup=self.df.parsetag(path_xsd,'xsd:schema') if self.df.parsetag(path_xsd,'xsd:schema')!=None else self.df.parsetag(path_xsd,'xs:schema') if self.df.parsetag(path_xsd,'xs:schema') else self.df.parsetag(path_xsd,'schema')
 
         self.df.parseRoletypes(soup.find_all('link:roletype'),path_xsd)
-        self.df.parseLinkbaserefs(soup.find_all('link:linkbaseref'),path_xsd,'maintabxsd')
+        self.df.parseLinkbaserefs(soup,path_xsd)
+        self.df.parseTableParts(soup,path_xsd)
 
         linkbaserefs = soup.find_all('link:linkbaseref')
 
@@ -192,6 +195,7 @@ class c_parseTab():
                 'df_tableschemas':self.df.concatDfs(self.df.df_tableschemas_Dic),
                 'df_linkbaserefs':self.df.concatDfs(self.df.df_linkbaserefs_Dic),
                 'df_tables': self.df.df_tables,
+                'df_tableparts': self.df.concatDfs(self.df.df_tableparts_Dic),
                 'df_va_edmembers':self.df.concatDfs(self.df.df_va_edmembers_Dic),
                 'df_va_edimensions':self.df.concatDfs(self.df.df_va_edimensions_Dic),
                 'df_va_tdimensions':self.df.concatDfs(self.df.df_va_tdimensions_Dic),
@@ -204,7 +208,7 @@ class c_parseTab():
 
 
 if __name__ == "__main__":
-    ss=c_parseTab('final_5_2','npf','npf')
+    ss=c_parseTab('final_4_2','npf','npf')
     #tables=ss.startParse()
     ss.parsesupport()
     ss.parsetab(['../tab/sr_0420154/sr_0420154.xsd', 'http://www.cbr.ru/xbrl/nso/ins/rep/2023-03-31/tab/sr_0420154'])

@@ -17,36 +17,41 @@ conn1 = psycopg2.connect(user="postgres",
 print(conn)
 print(conn1)
 
-conn1.autocommit = True
+#conn1.autocommit = True
 cursor = conn1.cursor()
 #['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']
 for rinok in [['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']]:
-    print('parseDic',rinok)
-    ss=parseDicNew.c_parseDic('final_5_2',rinok[0],rinok[1])
-    df_list=ss.startParse()
-    print(df_list.keys())
-    str_headers=''
-    for xx in df_list.keys():
-        headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
-        for hh in headers:
-            str_headers = str_headers + hh + '\n'
-        str_headers = str_headers.strip()[:-1]
-        df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
-    del df_list
-    gc.collect()
 
-    ss=parseTab.c_parseTab('final_5_2',rinok[0],rinok[1])
-    print('parseTab',rinok)
-    df_list=ss.startParse()
-    str_headers=''
-    for xx in df_list.keys():
-        headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
-        for hh in headers:
-            str_headers = str_headers + hh + '\n'
-        str_headers = str_headers.strip()[:-1]
-        df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
-    del df_list
-    gc.collect()
+    try:
+        print('parseTab', rinok)
+        ss = parseTab.c_parseTab('final_5_2', rinok[0], rinok[1])
+        df_list = ss.startParse()
+        str_headers = ''
+        for xx in df_list.keys():
+            headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
+            for hh in headers:
+                str_headers = str_headers + hh + '\n'
+            str_headers = str_headers.strip()[:-1]
+            df_list.get(xx).to_sql(xx[3:], conn, if_exists='append', index=False)
+        del df_list
+        gc.collect()
+
+        print('parseDic', rinok)
+        ss=parseDicNew.c_parseDic('final_5_2',rinok[0],rinok[1])
+        df_list=ss.startParse()
+        print(df_list.keys())
+        str_headers=''
+        for xx in df_list.keys():
+            headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
+            for hh in headers:
+                str_headers = str_headers + hh + '\n'
+            str_headers = str_headers.strip()[:-1]
+            df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
+        del df_list
+        gc.collect()
+
+    except:
+        print(rinok,'not found')
 
 ss=parseDicNew.c_parseDic('final_5_2','udr\\dim','dim')
 df_list=ss.startParse()
@@ -77,6 +82,19 @@ gc.collect()
 ss=parseDicNew.c_parseDic('final_5_2','bfo\\dict','dictionary')
 df_list=ss.startParse()
 print('bfo\\dict',df_list.keys())
+str_headers=''
+for xx in df_list.keys():
+    headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
+    for hh in headers:
+        str_headers = str_headers + hh + '\n'
+    str_headers = str_headers.strip()[:-1]
+    df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
+del df_list
+gc.collect()
+
+ss=parseDicNew.c_parseDic('final_5_2','eps','cbr-coa')
+df_list=ss.startParse()
+print('eps',df_list.keys())
 str_headers=''
 for xx in df_list.keys():
     headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]

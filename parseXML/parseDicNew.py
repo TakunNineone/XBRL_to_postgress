@@ -14,8 +14,8 @@ class c_parseDic():
             self.path_pres = f'{path_folder}{rinok}-dic-presentation.xml'
             self.rinok = rinok
             self.rinok_folder = rinok_folder
-            self.df = parseToDf.c_parseToDf(self.rinok)
-        elif rinok_folder == 'bfo\\dict':
+            self.df = parseToDf.c_parseToDf(taxonomy,self.rinok)
+        elif rinok_folder in ('bfo\\dict'):
             path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\{rinok_folder}\\'
             self.path_dic = f'{path_folder}{rinok}.xsd'
             self.path_label = f'{path_folder}{rinok}-label.xml'
@@ -23,11 +23,20 @@ class c_parseDic():
             self.path_pres = f'{path_folder}{rinok}-presentation.xml'
             self.rinok = 'bfo'
             self.rinok_folder = rinok_folder
-            self.df = parseToDf.c_parseToDf(self.rinok)
+            self.df = parseToDf.c_parseToDf(taxonomy,self.rinok)
+        elif rinok_folder in ('eps'):
+            path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\{rinok_folder}\\'
+            self.path_dic = f'{path_folder}{rinok}.xsd'
+            self.path_label = f'{path_folder}{rinok}-label.xml'
+            self.path_definition = f'{path_folder}{rinok}-definition.xml'
+            self.path_pres = f'{path_folder}{rinok}-presentation.xml'
+            self.rinok = 'eps'
+            self.rinok_folder = rinok_folder
+            self.df = parseToDf.c_parseToDf(taxonomy,self.rinok)
         else:
             self.rinok_folder=rinok_folder
             self.rinok=rinok
-            self.df = parseToDf.c_parseToDf(self.rinok)
+            self.df = parseToDf.c_parseToDf(taxonomy,self.rinok)
             path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\nso\\{rinok_folder}\\dic\\'
             self.path_dic=f'{path_folder}{rinok}-dic.xsd'
             self.path_label=f'{path_folder}{rinok}-dic-label.xml'
@@ -55,6 +64,7 @@ class c_parseDic():
         def t10(): self.df.parseLocators(soup_pres.find_all_next('link:loc') if soup_pres else None, self.path_definition, 'presentation')
         def t11(): self.df.parseArcs(soup_pres.find_all_next('link:presentationarc') if soup_pres else None, self.path_label, 'presentation')
         defs=[t1,t2,t3,t4,t5,t6, t7, t8,t9,t10,t11]
+        #defs = [t2]
         with ThreadPool(processes=11) as pool:
             pool.map(self.df.writeThread, defs)
 
@@ -71,7 +81,7 @@ class c_parseDic():
                 'df_rolerefs':self.df.concatDfs(self.df.df_rolerefs_Dic)}
 
 if __name__ == "__main__":
-    ss=c_parseDic('final_5_2','npf','npf')
+    ss=c_parseDic('final_4_2','udr\\dim','dim')
     dfs=ss.startParse()
 
     None
