@@ -31,6 +31,7 @@ class c_parseToDf():
         self.df_va_assertions_Dic = []
         self.df_va_generals_Dic=[]
         self.df_va_aspectcovers_Dic=[]
+        self.df_va_assertionset_Dic=[]
 
 
         self.df_tables = pd.DataFrame(columns=['version', 'rinok', 'entity', 'targetnamespace', 'schemalocation', 'namespace'])
@@ -55,6 +56,23 @@ class c_parseToDf():
         df_va_assertions=pd.DataFrame(data=temp_list,columns=columns)
         self.df_va_assertions_Dic.append(df_va_assertions)
         del df_va_assertions
+
+    def parse_assertionset(self,soup,path):
+        # print(f'parse_concepts - {path}')
+        temp_list=[]
+        columns=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id']
+        soup=soup.find_all_next('validation:assertionset')
+        for xx in soup:
+            temp_list.append([self.version,self.rinok, os.path.basename(path),
+                                        xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
+                                        xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
+                                        xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
+                                        xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
+                                        xx['id'] if 'id' in xx.attrs.keys() else None
+                                        ])
+        df_va_assertionset=pd.DataFrame(data=temp_list,columns=columns)
+        self.df_va_assertionset_Dic.append(df_va_assertionset)
+        del df_va_assertionset,temp_list
 
     def parse_aspectcovers(self,soup,path):
         # print(f'parse_aspectcovers - {path}')

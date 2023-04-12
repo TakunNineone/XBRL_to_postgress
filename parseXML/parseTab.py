@@ -84,12 +84,12 @@ class c_parseTab():
                 else: replace_ = 'link:'
                 soup_formula = self.df.parsetag(path, 'link:linkbase'.replace(replace_, ''))
                 def t0(): self.df.parse_generals(soup_formula.find_all_next('gf:general'),path)
-                def t1(): self.df.parseRolerefs(soup_formula.find_all('link:roleref'),path,'formula')
+                def t1(): self.df.parseRolerefs(soup_formula.find_all('link:roleref'.replace(replace_,'')),path,'formula')
                 def t2(): self.df.parseArcs(soup_formula.find_all_next('variable:variablearc'),path,'formula')
                 def t3(): self.df.parseArcs(soup_formula.find_all_next('variable:variablefilterarc'), path, 'formula')
                 def t3_2(): self.df.parseArcs(soup_formula.find_all_next('variable:variablesetfilterarc'), path, 'formula')
                 def t4(): self.df.parseArcs(soup_formula.find_all_next('gen:arc'), path, 'formula')
-                def t5(): self.df.parseLocators(soup_formula.find_all_next('link:loc'),path,'formula')
+                def t5(): self.df.parseLocators(soup_formula.find_all_next('link:loc'.replace(replace_,'')),path,'formula')
                 def t6(): self.df.parseLabels(soup_formula.find_all_next('msg:message'),path)
                 def t7(): self.df.parse_assertions(soup_formula,path)
                 def t8(): self.df.parse_concepts(soup_formula,path)
@@ -97,11 +97,12 @@ class c_parseTab():
                 def t10(): self.df.parse_tdimensions(soup_formula,path)
                 def t11(): self.df.parse_edimensions(soup_formula,path)
                 def t12(): self.df.parse_aspectcovers(soup_formula.find_all_next('asf:aspectcover'),path)
-                t_all=[t0,t1,t2,t3,t3_2,t4,t5,t6,t7,t8,t9,t10,t11,t12]
-                # t_all = [t2, t3, t3_2]
+                def t13(): self.df.parse_assertionset(soup_formula,path)
+                t_all=[t0,t1,t2,t3,t3_2,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13]
 
-                with ThreadPool(processes=14) as pool:
+                with ThreadPool(processes=15) as pool:
                    pool.map(self.df.writeThread, t_all)
+
         rend = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
                 re.findall(r'rend\S*.xml',yy['xlink:href'])]
         if rend:
@@ -203,7 +204,8 @@ class c_parseTab():
                 'df_va_factvars':self.df.concatDfs(self.df.df_va_factvars_Dic),
                 'df_va_assertions':self.df.concatDfs(self.df.df_va_assertions_Dic),
                 'df_va_generals': self.df.concatDfs(self.df.df_va_generals_Dic),
-                # 'df_va_aspectcovers': self.df.concatDfs(self.df.df_va_aspectcovers_Dic)
+                'df_va_aspectcovers': self.df.concatDfs(self.df.df_va_aspectcovers_Dic),
+                'df_va_assertionsets': self.df.concatDfs(self.df.df_va_assertionset_Dic)
                 }
 
 
