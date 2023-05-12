@@ -14,53 +14,60 @@ class c_parseTab():
             self.rinok = 'bfo'
             self.version=taxonomy
             self.path_tax = f'{os.getcwd()}\\{taxonomy}\\'
-            self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\{rinok_folder}\\rep\\2023-03-31\\'
+            self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\{rinok_folder}\\rep\\2023-09-29\\'
             self.df = parseToDf.c_parseToDf(taxonomy,rinok)
         else:
             self.rinok=rinok
             self.version = taxonomy
             self.path_tax=f'{os.getcwd()}\\{taxonomy}\\'
-            self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\nso\\{rinok_folder}\\rep\\2023-03-31\\'
+            self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\nso\\{rinok_folder}\\rep\\2023-09-29\\'
             self.df=parseToDf.c_parseToDf(taxonomy,rinok)
 
     def parsesupport(self):
         path_supp=self.path_folder+'\\ep\\'
-        for xx in os.listdir(path_supp):
-            if  'support' in xx:
-                support_file=xx
-        path_file = path_supp + support_file
-        with open(path_file,'rb') as f:
-            ff=f.read()
-        soup=BeautifulSoup(ff,'lxml').contents[2].find_next('xsd:schema')
-        namesps=soup.find_all('xsd:import')
-        for xx in namesps:
-            if 'www.cbr.ru' in xx['namespace']:
-                self.df.df_tables.loc[-1] = [self.version,self.rinok, os.path.basename(path_file),
-                                          soup['targetnamespace'],xx['schemalocation'],xx['namespace']]
-                self.df.df_tables.index = self.df.df_tables.index + 1
-                self.df.df_tables = self.df.df_tables.sort_index()
+        if os.path.isdir(path_supp):
+            for xx in os.listdir(path_supp):
+                if  'support' in xx:
+                    support_file=xx
+            path_file = path_supp + support_file
+            with open(path_file,'rb') as f:
+                ff=f.read()
+            soup=BeautifulSoup(ff,'lxml').contents[2].find_next('xsd:schema')
+            namesps=soup.find_all('xsd:import')
+            for xx in namesps:
+                if 'www.cbr.ru' in xx['namespace']:
+                    self.df.df_tables.loc[-1] = [self.version,self.rinok, os.path.basename(path_file),
+                                              soup['targetnamespace'],xx['schemalocation'],xx['namespace']]
+                    self.df.df_tables.index = self.df.df_tables.index + 1
+                    self.df.df_tables = self.df.df_tables.sort_index()
+        else:
+            None
 
     def parsenosupport(self):
         path_supp = self.path_folder + '\\ep\\'
-        for ep in os.listdir(path_supp):
-            if 'support' not in ep:
-                path_file = path_supp + ep
-                with open(path_file, 'rb') as f:
-                    ff = f.read()
-                soup = BeautifulSoup(ff, 'lxml').contents[1].find_next('xsd:schema')
-                namesps = soup.find_all('xsd:import')
-                for xx in namesps:
-                    if 'www.cbr.ru' in xx['namespace']:
-                        self.df.df_tables.loc[-1] = [self.version, self.rinok, os.path.basename(path_file),
-                                                     soup['targetnamespace'], xx['schemalocation'], xx['namespace']]
-                        self.df.df_tables.index = self.df.df_tables.index + 1
-                        self.df.df_tables = self.df.df_tables.sort_index()
-        None
+        if os.path.isdir(path_supp):
+            for ep in os.listdir(path_supp):
+                if 'support' not in ep:
+                    path_file = path_supp + ep
+                    with open(path_file, 'rb') as f:
+                        ff = f.read()
+                    soup = BeautifulSoup(ff, 'lxml').contents[1].find_next('xsd:schema')
+                    namesps = soup.find_all('xsd:import')
+                    for xx in namesps:
+                        if 'www.cbr.ru' in xx['namespace']:
+                            self.df.df_tables.loc[-1] = [self.version, self.rinok, os.path.basename(path_file),
+                                                         soup['targetnamespace'], xx['schemalocation'], xx['namespace']]
+                            self.df.df_tables.index = self.df.df_tables.index + 1
+                            self.df.df_tables = self.df.df_tables.sort_index()
+            None
+        else:
+            None
 
     def parsetabThread(self):
         tabs=[[row['schemalocation'],row['namespace']] for index, row in self.df.df_tables.iterrows()]
-        with ThreadPool(processes=60) as pool:
-            pool.map(self.parsetab, tabs)
+        if tabs:
+            with ThreadPool(processes=60) as pool:
+                pool.map(self.parsetab, tabs)
 
     def parsetab(self,schemalocationnamespace):
 
@@ -107,7 +114,9 @@ class c_parseTab():
                 re.findall(r'rend\S*.xml',yy['xlink:href'])]
         if rend:
             with ThreadPool(processes=10) as pool:
-                pool.map(self.df.parseRulenodes, rend)
+                pool.map(self.df.parseRulenodes,rend)
+            with ThreadPool(processes=10) as pool:
+                pool.map(self.df.parseAspectnodes,rend)
             with ThreadPool(processes=10) as pool:
                 pool.map(self.parserend, rend)
 
@@ -174,8 +183,10 @@ class c_parseTab():
         def t3():self.df.parseTableschemas(soup.find_all('table:breakdown'),path,'breakdown')
         def t4():self.df.parseArcs(soup.find_all('table:tablebreakdownarc'),path,'table:tablebreakdownarc')
         def t5():self.df.parseArcs(soup.find_all_next('table:definitionnodesubtreearc'),path,'table:definitionnodesubtreearc')
-        t_all = [t1, t2, t3, t4, t5]
-        with ThreadPool(processes=5) as pool:
+        def t6():self.df.parseArcs(soup.find_all_next('table:aspectnodefilterarc'), path,'table:aspectnodefilterarc')
+        def t7():self.df.parse_edimensions_rend(soup,path)
+        t_all = [t1, t2, t3, t4, t5, t6, t7]
+        with ThreadPool(processes=7) as pool:
             pool.map(self.df.writeThread, t_all)
 
     def startParse(self):
@@ -184,10 +195,15 @@ class c_parseTab():
         self.parsenosupport()
         gc.collect()
         return {
-            'df_rulenodes':self.df.concatDfs(self.df.df_rulenodes_Dic),
+                'df_rulenodes':self.df.concatDfs(self.df.df_rulenodes_Dic),
+                'df_aspectnodes': self.df.concatDfs(self.df.df_aspectnodes_Dic),
+                'df_aspectnodes_d': self.df.concatDfs(self.df.df_aspectnodes_d_Dic),
+                'df_aspectnodes_p': self.df.concatDfs(self.df.df_aspectnodes_p_Dic),
                 'df_rulenodes_c':self.df.concatDfs(self.df.df_rulenodes_c_Dic),
                 'df_rulenodes_p':self.df.concatDfs(self.df.df_rulenodes_p_Dic),
                 'df_rulenodes_e':self.df.concatDfs(self.df.df_rulenodes_e_Dic),
+                'df_rend_edmembers':self.df.concatDfs(self.df.df_rend_edmembers_Dic),
+                'df_rend_edimensions':self.df.concatDfs(self.df.df_rend_edimensions_Dic),
                 'df_roletypes':self.df.concatDfs(self.df.df_roletypes_Dic),
                 'df_locators':self.df.concatDfs(self.df.df_locators_Dic),
                 'df_arcs':self.df.concatDfs(self.df.df_arcs_Dic),
@@ -210,8 +226,11 @@ class c_parseTab():
 
 
 if __name__ == "__main__":
-    ss=c_parseTab('final_4_2','npf','npf')
-    #tables=ss.startParse()
+    ss=c_parseTab('final_5_2_0_4','nfo','nfo')
     ss.parsesupport()
-    ss.parsetab(['../tab/sr_0420154/sr_0420154.xsd', 'http://www.cbr.ru/xbrl/nso/ins/rep/2023-03-31/tab/sr_0420154'])
+    tables=ss.startParse()
+    #ss.parsetab(['../tab/sr_0420154/sr_0420154.xsd', 'http://www.cbr.ru/xbrl/nso/ins/rep/2023-09-29/tab/sr_0420154'])
+    for xx in tables.keys():
+        if tables.get(xx):
+            headers = [xx.strip() + ' VARCHAR, ' for xx in tables.get(xx).keys().values]
     None

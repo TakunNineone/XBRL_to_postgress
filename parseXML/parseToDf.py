@@ -11,10 +11,16 @@ class c_parseToDf():
         self.rinok=rinok
         self.version=taxonomy
         self.df_rulenodes_Dic = []
+        self.df_aspectnodes_Dic = []
+        self.df_aspectnodes_d_Dic = []
+        self.df_aspectnodes_p_Dic = []
         self.df_rulenodes_e_Dic=[]
         self.df_rulenodes_c_Dic = []
         self.df_rulenodes_p_Dic = []
+        self.df_rend_edmembers_Dic = []
+        self.df_rend_edimensions_Dic = []
         self.df_elements_Dic=[]
+        self.df_element_attrs_Dic=[]
         self.df_roletypes_Dic=[]
         self.df_locators_Dic=[]
         self.df_arcs_Dic=[]
@@ -32,9 +38,9 @@ class c_parseToDf():
         self.df_va_generals_Dic=[]
         self.df_va_aspectcovers_Dic=[]
         self.df_va_assertionset_Dic=[]
-
-
         self.df_tables = pd.DataFrame(columns=['version', 'rinok', 'entity', 'targetnamespace', 'schemalocation', 'namespace'])
+
+        self.aspects_childs=[]
 
     def parse_assertions(self,soup,path):
         # print(f'parse_assertions - {path}')
@@ -172,7 +178,7 @@ class c_parseToDf():
         temp_list1=[]
         temp_list2=[]
         columns1=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'dimension']
-        columns2=['version','rinok', 'entity', 'parentrole', 'dimension_id', 'member']
+        columns2=['version','rinok', 'entity', 'parentrole', 'dimension_id', 'member','linkrole','arcrole','axis']
         soup=soup.find_all_next('df:explicitdimension')
         for xx in soup:
             temp_list1.append([self.version,self.rinok, os.path.basename(path),
@@ -187,9 +193,12 @@ class c_parseToDf():
             if members!=[]:
                 for yy in members:
                    temp_list2.append([self.version,self.rinok, os.path.basename(path),
-                                                 xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
-                                                 xx['id'] if 'id' in xx.attrs.keys() else None,
-                                                 yy.text.strip()
+                                        xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
+                                        xx['id'] if 'id' in xx.attrs.keys() else None,
+                                        yy.find_next('df:qname').text if yy.find_next('df:qname') else None,
+                                        yy.find_next('df:linkrole').text if yy.find_next('df:linkrole') else None,
+                                        yy.find_next('df:arcrole').text if yy.find_next('df:arcrole') else None,
+                                        yy.find_next('df:axis').text if  yy.find_next('df:axis') else None
                                                  ])
         df_va_edimensions=pd.DataFrame(data=temp_list1,columns=columns1)
         df_va_edmembers=pd.DataFrame(data=temp_list2,columns=columns2)
@@ -197,17 +206,100 @@ class c_parseToDf():
         self.df_va_edimensions_Dic.append(df_va_edimensions)
         del df_va_edmembers,df_va_edimensions,temp_list1,temp_list2
 
+    def parse_edimensions_rend(self,soup,path):
+        # print(f'parse_edimensions - {path}')
+        temp_list1=[]
+        temp_list2=[]
+        columns1=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'dimension']
+        columns2=['version','rinok', 'entity', 'parentrole', 'dimension_id', 'member','linkrole','arcrole','axis']
+        soup=soup.find_all_next('df:explicitdimension')
+        for xx in soup:
+            temp_list1.append([self.version,self.rinok, os.path.basename(path),
+                                        xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
+                                        xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
+                                        xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
+                                        xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
+                                        xx['id'] if 'id' in xx.attrs.keys() else None,
+                                        xx.findChild().text.strip()
+                                        ])
+            members=xx.find_all('df:member')
+            if members!=[]:
+                for yy in members:
+                   temp_list2.append([self.version,self.rinok, os.path.basename(path),
+                                        xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
+                                        xx['id'] if 'id' in xx.attrs.keys() else None,
+                                        yy.find_next('df:qname').text if yy.find_next('df:qname') else None,
+                                        yy.find_next('df:linkrole').text if yy.find_next('df:linkrole') else None,
+                                        yy.find_next('df:arcrole').text if yy.find_next('df:arcrole') else None,
+                                        yy.find_next('df:axis').text if  yy.find_next('df:axis') else None
+                                                 ])
+        df_rend_edimensions=pd.DataFrame(data=temp_list1,columns=columns1)
+        df_rend_edmembers=pd.DataFrame(data=temp_list2,columns=columns2)
+        self.df_rend_edmembers_Dic.append(df_rend_edmembers)
+        self.df_rend_edimensions_Dic.append(df_rend_edimensions)
+        del df_rend_edmembers,df_rend_edimensions,temp_list1,temp_list2
 
     # def parseVA(self,path):
     #     df_va_covers = pd.DataFrame(columns=['rinok', 'entity', 'parentrole','type', 'label', 'title', 'id','values'])
+
+    def parseAspectnodes(self,path):
+        if self.parsetag(path,'linkbase'):
+            soup=self.parsetag(path,'linkbase').find_all_next('table:aspectnode')
+        else:
+            soup = self.parsetag(path, 'link:linkbase').find_all_next('table:aspectnode')
+        temp_list = []
+        temp_list2 = []
+        temp_list3 = []
+        columns = ['version', 'rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id']
+        columns2 = ['version', 'rinok', 'entity', 'parentrole', 'aspect_id','includeunreportedvalue', 'dimension']
+        columns3 = ['version', 'rinok', 'entity', 'parentrole', 'aspect_id', 'period']
+        if soup:
+            for xx in soup:
+                dimensionaspects=xx.find_all_next('table:dimensionaspect')
+                periodaspects=xx.find_all_next('table:periodaspect')
+                parentrole = xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None
+                for da in dimensionaspects:
+                    temp_list2.append([self.version,self.rinok, os.path.basename(path),
+                                      parentrole,
+                                      xx['id'],
+                                      da['includeunreportedvalue'] if 'includeunreportedvalue' in da.attrs.keys() else None,
+                                      da.text
+                                      ])
+                for pa in periodaspects:
+                    temp_list3.append([
+                                      self.version, self.rinok, os.path.basename(path),
+                                      parentrole,
+                                      xx['id'],
+                                      pa.text
+                                      ])
+                temp_list.append([self.version,self.rinok, os.path.basename(path),
+                                        parentrole,
+                                        xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
+                                        xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
+                                        xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
+                                        xx['id'] if 'id' in xx.attrs.keys() else None
+                                        ])
+        df_aspectnodes = pd.DataFrame(data=temp_list, columns=columns)
+        df_aspectnodes_d=pd.DataFrame(data=temp_list2, columns=columns2)
+        df_aspectnodes_p = pd.DataFrame(data=temp_list3, columns=columns3)
+        self.appendDfs_Dic(self.df_aspectnodes_Dic, df_aspectnodes)
+        self.appendDfs_Dic(self.df_aspectnodes_d_Dic, df_aspectnodes_d)
+        self.appendDfs_Dic(self.df_aspectnodes_p_Dic, df_aspectnodes_p)
+        del df_aspectnodes, temp_list,temp_list2,temp_list3,df_aspectnodes_d,df_aspectnodes_p
 
 
     def parseRulenodes(self,path):
         # try:
         if self.parsetag(path,'linkbase'):
             soup=self.parsetag(path,'linkbase').find_all_next('table:rulenode')
+            tags=self.parsetag(path,'linkbase').find_next('gen:link').findChildren()
         else:
             soup = self.parsetag(path,'link:linkbase').find_all_next('table:rulenode')
+            tags = self.parsetag(path, 'link:linkbase').find_next('gen:link').findChildren()
+
+        for zz in tags:
+            self.aspects_childs.append(zz.name)
+
         temp_list1 = []
         temp_list2 = []
         temp_list3 = []
@@ -270,16 +362,21 @@ class c_parseToDf():
         columns=['version','rinok', 'entity', 'targetnamespase', 'name', 'id','qname', 'type',
                                                  'typeddomainref', 'substitutiongroup', 'periodtype', 'abstract',
                                                  'nillable', 'creationdate', 'fromdate', 'enumdomain', 'enum2domain',
-                                                 'enumlinkrole', 'enum2linkrole']
+                                                 'enumlinkrole', 'enum2linkrole','pattern','minlength']
         if dict_with_lbrfs:
             for xx in dict_with_lbrfs:
                 qname_rep=os.path.basename(full_file_path).replace('.xsd','')
-                # restriction=xx.find('xsd:restriction')
-                # if restriction:
-                #     print(xx['name'])
-                #     print(restriction.findChildren())
-                #     #print(simpletypes)
-                #     print('------------------------------------------')
+                restriction=xx.find('xsd:restriction')
+                pattern = None
+                minlength = None
+                if restriction:
+                    #print(xx['name'])
+                    attrs=restriction.findChildren()
+                    for aa in attrs:
+                        if aa.name == 'xsd:pattern':
+                            pattern = aa['value']
+                        elif aa.name == 'xsd:minlength':
+                            minlength = aa['value']
                 temp_list.append([
                     self.version,self.rinok,os.path.basename(full_file_path),
                     xx.parent['targetnamespace'] if 'targetnamespace' in xx.parent.attrs.keys() else None,
@@ -297,7 +394,9 @@ class c_parseToDf():
                     xx['enum:domain'] if 'enum:domain' in xx.attrs else None,
                     xx['enum2:domain'] if 'enum2:domain' in xx.attrs else None,
                     xx['enum:linkrole'] if 'enum:linkrole' in xx.attrs else None,
-                    xx['enum2:linkrole'] if 'enum2:linkrole' in xx.attrs else None
+                    xx['enum2:linkrole'] if 'enum2:linkrole' in xx.attrs else None,
+                    pattern,
+                    minlength
                 ])
         df_elements=pd.DataFrame(data=temp_list,columns=columns)
         self.appendDfs_Dic(self.df_elements_Dic, df_elements)
