@@ -14,13 +14,13 @@ class c_parseTab():
             self.rinok = 'bfo'
             self.version=taxonomy
             self.path_tax = f'{os.getcwd()}\\{taxonomy}\\'
-            self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\{rinok_folder}\\rep\\2023-09-29\\'
+            self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\{rinok_folder}\\rep\\2023-03-31\\'
             self.df = parseToDf.c_parseToDf(taxonomy,rinok)
         else:
             self.rinok=rinok
             self.version = taxonomy
             self.path_tax=f'{os.getcwd()}\\{taxonomy}\\'
-            self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\nso\\{rinok_folder}\\rep\\2023-09-29\\'
+            self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\nso\\{rinok_folder}\\rep\\2023-03-31\\'
             self.df=parseToDf.c_parseToDf(taxonomy,rinok)
 
     def parsesupport(self):
@@ -85,6 +85,7 @@ class c_parseTab():
 
         formulas = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
                 re.findall(r'formula\S*.xml', yy['xlink:href'])]
+
         if formulas:
             for path in formulas:
                 if self.df.parsetag(path, 'link:linkbase'): replace_ = ''
@@ -115,6 +116,8 @@ class c_parseTab():
         if rend:
             with ThreadPool(processes=10) as pool:
                 pool.map(self.df.parseRulenodes,rend)
+            with ThreadPool(processes=10) as pool:
+                pool.map(self.df.parseRulesets,rend)
             with ThreadPool(processes=10) as pool:
                 pool.map(self.df.parseAspectnodes,rend)
             with ThreadPool(processes=10) as pool:
@@ -202,6 +205,7 @@ class c_parseTab():
                 'df_rulenodes_c':self.df.concatDfs(self.df.df_rulenodes_c_Dic),
                 'df_rulenodes_p':self.df.concatDfs(self.df.df_rulenodes_p_Dic),
                 'df_rulenodes_e':self.df.concatDfs(self.df.df_rulenodes_e_Dic),
+                'df_rulesets':self.df.concatDfs(self.df.df_rulesets_Dic),
                 'df_rend_edmembers':self.df.concatDfs(self.df.df_rend_edmembers_Dic),
                 'df_rend_edimensions':self.df.concatDfs(self.df.df_rend_edimensions_Dic),
                 'df_roletypes':self.df.concatDfs(self.df.df_roletypes_Dic),
@@ -224,13 +228,9 @@ class c_parseTab():
                 'df_va_assertionsets': self.df.concatDfs(self.df.df_va_assertionset_Dic)
                 }
 
-
 if __name__ == "__main__":
-    ss=c_parseTab('final_5_2_0_4','nfo','nfo')
-    ss.parsesupport()
+    ss=c_parseTab('final_5_2','purcb','purcb')
     tables=ss.startParse()
-    #ss.parsetab(['../tab/sr_0420154/sr_0420154.xsd', 'http://www.cbr.ru/xbrl/nso/ins/rep/2023-09-29/tab/sr_0420154'])
-    for xx in tables.keys():
-        if tables.get(xx):
-            headers = [xx.strip() + ' VARCHAR, ' for xx in tables.get(xx).keys().values]
+
+    # ss.parsetab(['../tab/sved_bki/sved_bki.xsd', 'http://www.cbr.ru/xbrl/nso/bki/rep/2023-09-29/tab/sved_bki'])
     None

@@ -17,7 +17,7 @@ conn1 = psycopg2.connect(user="postgres",
 print(conn)
 print(conn1)
 
-version='natasha'
+version='final_5_2'
 
 #conn1.autocommit = True
 cursor = conn1.cursor()
@@ -36,7 +36,7 @@ del df_list
 gc.collect()
 
 #['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']
-for rinok in [['nfo','nfo'],['bki','bki'],['purcb','purcb'],['ins','ins']]:
+for rinok in [['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']]:
     # try:
         print('parseTab', rinok)
         ss = parseTab.c_parseTab(version, rinok[0], rinok[1])
@@ -136,4 +136,5 @@ gc.collect()
 
 conn1.commit()
 conn1.close()
+conn.close()
 print('end',datetime.datetime.now())

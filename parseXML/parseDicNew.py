@@ -81,7 +81,7 @@ class c_parseDic():
                 'df_rolerefs':self.df.concatDfs(self.df.df_rolerefs_Dic)}
 
 if __name__ == "__main__":
-    ss=c_parseDic('final_5_2_0_4','nfo','nfo')
+    ss=c_parseDic('final_tu_0_1','nfo','nfo')
     dfs=ss.startParse()
 
     None
