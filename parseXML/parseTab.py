@@ -9,18 +9,20 @@ warnings.filterwarnings("ignore")
 from multiprocessing.pool import ThreadPool
 
 class c_parseTab():
-    def __init__(self,taxonomy,rinok_folder,rinok):
+    def __init__(self,taxonomy,rinok_folder,rinok,period):
         if rinok_folder=='bfo':
             self.rinok = 'bfo'
             self.version=taxonomy
+            self.period=period
             self.path_tax = f'{os.getcwd()}\\{taxonomy}\\'
-            self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\{rinok_folder}\\rep\\2023-03-31\\'
+            self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\{rinok_folder}\\rep\\{period}\\'
             self.df = parseToDf.c_parseToDf(taxonomy,rinok)
         else:
             self.rinok=rinok
             self.version = taxonomy
+            self.period = period
             self.path_tax=f'{os.getcwd()}\\{taxonomy}\\'
-            self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\nso\\{rinok_folder}\\rep\\2023-03-31\\'
+            self.path_folder = f'{os.getcwd()}\{taxonomy}\\www.cbr.ru\\xbrl\\nso\\{rinok_folder}\\rep\\{period}\\'
             self.df=parseToDf.c_parseToDf(taxonomy,rinok)
 
     def parsesupport(self):
@@ -35,7 +37,7 @@ class c_parseTab():
             soup=BeautifulSoup(ff,'lxml').contents[2].find_next('xsd:schema')
             namesps=soup.find_all('xsd:import')
             for xx in namesps:
-                if 'www.cbr.ru' in xx['namespace']:
+                if 'www.cbr.ru' in xx['namespace'] and f'{self.period}/tab' in xx['namespace']:
                     self.df.df_tables.loc[-1] = [self.version,self.rinok, os.path.basename(path_file),
                                               soup['targetnamespace'],xx['schemalocation'],xx['namespace']]
                     self.df.df_tables.index = self.df.df_tables.index + 1
@@ -54,7 +56,7 @@ class c_parseTab():
                     soup = BeautifulSoup(ff, 'lxml').contents[1].find_next('xsd:schema')
                     namesps = soup.find_all('xsd:import')
                     for xx in namesps:
-                        if 'www.cbr.ru' in xx['namespace']:
+                        if 'www.cbr.ru' in xx['namespace'] and f'{self.period}/tab' in xx['namespace']:
                             self.df.df_tables.loc[-1] = [self.version, self.rinok, os.path.basename(path_file),
                                                          soup['targetnamespace'], xx['schemalocation'], xx['namespace']]
                             self.df.df_tables.index = self.df.df_tables.index + 1
@@ -65,6 +67,7 @@ class c_parseTab():
 
     def parsetabThread(self):
         tabs=[[row['schemalocation'],row['namespace']] for index, row in self.df.df_tables.iterrows()]
+
         if tabs:
             with ThreadPool(processes=60) as pool:
                 pool.map(self.parsetab, tabs)
@@ -80,9 +83,9 @@ class c_parseTab():
         self.df.parseRoletypes(soup.find_all('link:roletype'),path_xsd)
         self.df.parseLinkbaserefs(soup,path_xsd)
         self.df.parseTableParts(soup,path_xsd)
+        gc.collect()
 
         linkbaserefs = soup.find_all('link:linkbaseref')
-
         formulas = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
                 re.findall(r'formula\S*.xml', yy['xlink:href'])]
 
@@ -110,6 +113,7 @@ class c_parseTab():
 
                 with ThreadPool(processes=15) as pool:
                    pool.map(self.df.writeThread, t_all)
+        gc.collect()
 
         rend = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
                 re.findall(r'rend\S*.xml',yy['xlink:href'])]
@@ -122,24 +126,26 @@ class c_parseTab():
                 pool.map(self.df.parseAspectnodes,rend)
             with ThreadPool(processes=10) as pool:
                 pool.map(self.parserend, rend)
+        gc.collect()
 
         pres = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if re.findall(r'presentation\S*.xml',yy['xlink:href'])]
         if pres:
             with ThreadPool(processes=len(pres)) as pool:
                 pool.map(self.parsepres, pres)
+        gc.collect()
 
         defin = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if re.findall(r'definition\S*.xml',yy['xlink:href'])]
         if defin:
             with ThreadPool(processes=len(defin)) as pool:
                 pool.map(self.parsedef, defin)
-
-
+        gc.collect()
 
         lab = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
                re.findall(r'lab\S*.xml',yy['xlink:href'])]
         if lab:
             with ThreadPool(processes=20) as pool:
                 pool.map(self.parselab, lab)
+        gc.collect()
 
     def parsedef(self,path):
         if self.df.parsetag(path,'link:linkbase'): replace_=''
@@ -151,6 +157,7 @@ class c_parseTab():
         t_all=[t1,t2,t3]
         with ThreadPool(processes=3) as pool:
             pool.map(self.df.writeThread, t_all)
+        gc.collect()
 
     def parsepres(self,path):
         if self.df.parsetag(path,'link:linkbase'): replace_=''
@@ -162,6 +169,7 @@ class c_parseTab():
         t_all=[t1,t2,t3]
         with ThreadPool(processes=3) as pool:
             pool.map(self.df.writeThread, t_all)
+        gc.collect()
 
     def parselab(self,path):
         if self.df.parsetag(path, 'linkbase'):
@@ -175,6 +183,7 @@ class c_parseTab():
         t_all=[t1, t2, t3, t4]
         with ThreadPool(processes=4) as pool:
             pool.map(self.df.writeThread, t_all)
+        gc.collect()
 
     def parserend(self,path):
         if self.df.parsetag(path, 'linkbase'):
@@ -187,10 +196,13 @@ class c_parseTab():
         def t4():self.df.parseArcs(soup.find_all('table:tablebreakdownarc'),path,'table:tablebreakdownarc')
         def t5():self.df.parseArcs(soup.find_all_next('table:definitionnodesubtreearc'),path,'table:definitionnodesubtreearc')
         def t6():self.df.parseArcs(soup.find_all_next('table:aspectnodefilterarc'), path,'table:aspectnodefilterarc')
-        def t7():self.df.parse_edimensions_rend(soup,path)
-        t_all = [t1, t2, t3, t4, t5, t6, t7]
-        with ThreadPool(processes=7) as pool:
+        def t7():self.df.parseArcs(soup.find_all_next('table:tablebreakdownarc'),path,'table:tablebreakdownarc')
+        def t8():self.df.parseArcs(soup.find_all_next('table:breakdowntreearc'), path, 'table:breakdowntreearc')
+        def t9():self.df.parse_edimensions_rend(soup,path)
+        t_all = [t1, t2, t3, t4, t5, t6, t7, t8, t9]
+        with ThreadPool(processes=9) as pool:
             pool.map(self.df.writeThread, t_all)
+        gc.collect()
 
     def startParse(self):
         self.parsesupport()
@@ -229,7 +241,7 @@ class c_parseTab():
                 }
 
 if __name__ == "__main__":
-    ss=c_parseTab('final_5_2','purcb','purcb')
+    ss=c_parseTab('final_5_2','uk','uk','2023-03-31')
     tables=ss.startParse()
 
     # ss.parsetab(['../tab/sved_bki/sved_bki.xsd', 'http://www.cbr.ru/xbrl/nso/bki/rep/2023-09-29/tab/sved_bki'])

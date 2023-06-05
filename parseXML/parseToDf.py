@@ -302,7 +302,7 @@ class c_parseToDf():
         temp_list2 = []
         temp_list3 = []
         temp_list4 = []
-        columns1=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'abstract', 'merge']
+        columns1=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'abstract', 'merge','tagselector']
         columns2=['version','rinok', 'entity', 'parentrole', 'rulenode_id', 'dimension', 'member']
         columns3=['version','rinok', 'entity', 'parentrole', 'rulenode_id','value']
         columns4=['version','rinok', 'entity', 'parentrole', 'rulenode_id','period_type','start','end']
@@ -319,7 +319,8 @@ class c_parseToDf():
                                         xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
                                         xx['id'] if 'id' in xx.attrs.keys() else None,
                                         xx['abstract'] if 'abstract' in xx.attrs.keys() else None,
-                                        xx['merge'] if 'merge' in xx.attrs.keys() else None
+                                        xx['merge'] if 'merge' in xx.attrs.keys() else None,
+                                        xx['tagselector'] if 'tagselector' in xx.attrs.keys() else None
                                         ])
                 if nexttag_e:
                     temp_list2.append([self.version,self.rinok, os.path.basename(path),
@@ -392,13 +393,23 @@ class c_parseToDf():
     def parseElements(self,dict_with_lbrfs, full_file_path):
         #print(f'Elements - {full_file_path}')
         temp_list=[]
-        columns=['version','rinok', 'entity', 'targetnamespase', 'name', 'id','qname', 'type',
+        columns=['version','rinok', 'entity', 'targetnamespace', 'name', 'id','qname', 'type',
                                                  'typeddomainref', 'substitutiongroup', 'periodtype', 'abstract',
                                                  'nillable', 'creationdate', 'fromdate', 'enumdomain', 'enum2domain',
                                                  'enumlinkrole', 'enum2linkrole','pattern','minlength']
         if dict_with_lbrfs:
             for xx in dict_with_lbrfs:
                 qname_rep=os.path.basename(full_file_path).replace('.xsd','')
+                if self.rinok == 'bfo':
+                    qname_rep = 'ifrs-ru'
+                if self.rinok == 'ifrs-full':
+                    qname_rep = 'ifrs-full'
+                    rinok='bfo'
+                    entity='dictionary.xsd'
+                else:
+                    rinok=self.rinok
+                    entity=os.path.basename(full_file_path)
+
                 restriction=xx.find('xsd:restriction')
                 pattern = None
                 minlength = None
@@ -411,7 +422,7 @@ class c_parseToDf():
                         elif aa.name == 'xsd:minlength':
                             minlength = aa['value']
                 temp_list.append([
-                    self.version,self.rinok,os.path.basename(full_file_path),
+                    self.version,rinok,entity,
                     xx.parent['targetnamespace'] if 'targetnamespace' in xx.parent.attrs.keys() else None,
                     xx['name'] if 'name' in xx.attrs else None,
                     xx['id'] if 'id' in xx.attrs else None,
@@ -563,7 +574,7 @@ class c_parseToDf():
         temp_list=[]
         columns=['version','rinok', 'entity', 'arctype', 'parentrole', 'type', 'arcrole',
                                              'arcfrom', 'arcto', 'title', 'usable', 'closed', 'contextelement',
-                                             'targetrole', 'order', 'preferredlabel', 'use', 'priority','complement','cover','name'
+                                             'targetrole', 'order', 'preferredlabel', 'use', 'priority','complement','cover','name','axis'
                                              ]
         if dict_with_arcs:
             for arc in dict_with_arcs:
@@ -586,7 +597,8 @@ class c_parseToDf():
                     arc['priority'] if 'priority' in arc.attrs.keys() else None,
                     arc['complement'] if 'complement' in arc.attrs.keys() else None,
                     arc['cover'] if 'cover' in arc.attrs.keys() else None,
-                    arc['name'] if 'name' in arc.attrs.keys() else None
+                    arc['name'] if 'name' in arc.attrs.keys() else None,
+                    arc['axis'] if 'axis' in arc.attrs.keys() else None,
                 ])
         df_arcs=pd.DataFrame(data = temp_list, columns = columns)
         self.appendDfs_Dic(self.df_arcs_Dic, df_arcs)
