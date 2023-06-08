@@ -12,8 +12,6 @@ class c_parseToDf():
         self.version=taxonomy
         self.df_rulenodes_Dic = []
         self.df_aspectnodes_Dic = []
-        self.df_aspectnodes_d_Dic = []
-        self.df_aspectnodes_p_Dic = []
         self.df_rulenodes_e_Dic=[]
         self.df_rulenodes_c_Dic = []
         self.df_rulenodes_p_Dic = []
@@ -39,18 +37,57 @@ class c_parseToDf():
         self.df_va_generals_Dic=[]
         self.df_va_aspectcovers_Dic=[]
         self.df_va_assertionset_Dic=[]
+        self.df_preconditions_Dic=[]
+        self.df_messages_Dic=[]
         self.df_tables = pd.DataFrame(columns=['version', 'rinok', 'entity', 'targetnamespace', 'schemalocation', 'namespace'])
 
-        self.aspects_childs=[]
+    def parse_precond(self,soup,path):
+        temp_list = []
+        columns = ['version', 'rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'test']
+        soup = soup.find_all_next(re.compile('.*precondition$'))
+        for xx in soup:
+            parentrole = xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
+            temp_list.append([self.version,self.rinok, os.path.basename(path),
+                                    parentrole,
+                                    xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
+                                    xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
+                                    xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
+                                    xx['id'] if 'id' in xx.attrs.keys() else None,
+                                    xx['test'] if 'test' in xx.attrs.keys() else None
+                                    ])
+        df_preconditions=pd.DataFrame(data=temp_list,columns=columns)
+        self.df_preconditions_Dic.append(df_preconditions)
+        del df_preconditions,temp_list
+
+    def parse_messages(self,soup,path):
+        temp_list = []
+        columns = ['version', 'rinok', 'entity', 'parentrole', 'type', 'label','role', 'title','lang', 'id', 'text']
+        soup = soup.find_all_next(re.compile('.*message$'))
+        for xx in soup:
+            parentrole = xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
+            temp_list.append([self.version, self.rinok, os.path.basename(path),
+                              parentrole,
+                              xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
+                              xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
+                              xx['xlink:role'] if 'xlink:role' in xx.attrs.keys() else None,
+                              xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
+                              xx['xml:lang'] if 'xml:lang' in xx.attrs.keys() else None,
+                              xx['id'] if 'id' in xx.attrs.keys() else None,
+                              xx.text
+                              ])
+        df_messages = pd.DataFrame(data=temp_list, columns=columns)
+        self.df_messages_Dic.append(df_messages)
+        del df_messages, temp_list
 
     def parse_assertions(self,soup,path):
         # print(f'parse_assertions - {path}')
         temp_list = []
         columns=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'test','variables', 'aspectmodel','implicitfiltering']
-        soup=soup.find_all_next('va:valueassertion')
+        soup=soup.find_all_next(re.compile('.*valueassertion$'))
         for xx in soup:
+            parentrole = xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
             temp_list.append([self.version,self.rinok, os.path.basename(path),
-                                    xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
+                                    parentrole,
                                     xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
                                     xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
                                     xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
@@ -68,7 +105,7 @@ class c_parseToDf():
         # print(f'parse_concepts - {path}')
         temp_list=[]
         columns=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id']
-        soup=soup.find_all_next('validation:assertionset')
+        soup=soup.find_all_next(re.compile('.*assertionset$'))
         for xx in soup:
             temp_list.append([self.version,self.rinok, os.path.basename(path),
                                         xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
@@ -86,7 +123,7 @@ class c_parseToDf():
         temp_list=[]
         columns=['version','rinok', 'entity', 'parentrole','type', 'label', 'title', 'id','aspects']
         for xx in soup:
-            aspects = [yy.text for yy in xx.find_all('asf:aspect')]
+            aspects = [yy.text for yy in xx.find_all(re.compile('.*aspect$'))]
             aspects_str=''
             for yy in aspects:
                 aspects_str=aspects_str+yy+' '
@@ -123,7 +160,7 @@ class c_parseToDf():
         # print(f'parse_factvars - {path}')
         temp_list=[]
         columns=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'bindassequence','fallbackvalue']
-        soup=soup.find_all_next('variable:factvariable')
+        soup=soup.find_all_next(re.compile('.*factvariable$'))
         for xx in soup:
             temp_list.append([self.version,self.rinok, os.path.basename(path),
                                         xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
@@ -142,7 +179,7 @@ class c_parseToDf():
         # print(f'parse_concepts - {path}')
         temp_list=[]
         columns=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'value']
-        soup=soup.find_all_next('cf:conceptname')
+        soup=soup.find_all_next(re.compile('.*conceptname$'))
         for xx in soup:
             temp_list.append([self.version,self.rinok, os.path.basename(path),
                                         xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
@@ -160,7 +197,7 @@ class c_parseToDf():
         # print(f'parse_tdimensions - {path}')
         temp_list=[]
         columns=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'value']
-        soup=soup.find_all_next('df:typeddimension')
+        soup=soup.find_all_next(re.compile('.*typeddimension$'))
         for xx in soup:
             temp_list.append([self.version,self.rinok, os.path.basename(path),
                                         xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
@@ -177,26 +214,12 @@ class c_parseToDf():
     def generator_(self,iterable):
         iterator = iter(iterable)
         for yy in iterator:
-            member=yy.find('df:qname').text if yy.find('df:qname') else None
-            linkrole=yy.find('df:linkrole').text if yy.find('df:linkrole') else None
-            arcrole=yy.find('df:arcrole').text if yy.find('df:arcrole') else None
-            axis=yy.find('df:axis').text if  yy.find('df:axis') else None
+            member=yy.find(re.compile('.*qname$')).text if yy.find(re.compile('.*qname$')) else None
+            linkrole=yy.find(re.compile('.*linkrole$')).text if yy.find(re.compile('.*linkrole$')) else None
+            arcrole=yy.find(re.compile('.*arcrole$')).text if yy.find(re.compile('.*arcrole$')) else None
+            axis=yy.find(re.compile('.*axis$')).text if  yy.find(re.compile('.*axis$')) else None
             yield (member,linkrole,arcrole,axis)
         # yield (member,linkrole,arcrole,axis)
-
-    def generator_2(self,iterable):
-        iterator = iter(iterable)
-        for xx in iterator:
-            parentrole=xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None
-            type=xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None
-            label=xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None
-            title=xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None
-            id=xx['id'] if 'id' in xx.attrs.keys() else None
-            dimension=xx.findChild().text.strip()
-            members=xx.find_all('df:member')
-            yield (parentrole,type,label,title,id,dimension,members)
-        # yield (parentrole, type, label, title, id, dimension, members)
-
 
 
     def parse_edimensions(self,soup,path):
@@ -205,7 +228,7 @@ class c_parseToDf():
         temp_list2=[]
         columns1=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'dimension']
         columns2=['version','rinok', 'entity', 'parentrole', 'dimension_id', 'member','linkrole','arcrole','axis']
-        soup=soup.find_all_next('df:explicitdimension')
+        soup=soup.find_all_next(re.compile('.*explicitdimension$'))
         for parentrole,type,label,title,id,dimension,members in self.generator_2(soup):
             temp_list1.append([self.version,self.rinok, os.path.basename(path),
                                parentrole, type, label, title, id, dimension
@@ -221,13 +244,28 @@ class c_parseToDf():
         self.df_va_edimensions_Dic.append(df_va_edimensions)
         del df_va_edmembers,df_va_edimensions,temp_list1,temp_list2
 
+
+    def generator_2(self,iterable):
+        iterator = iter(iterable)
+        for xx in iterator:
+            parentrole=xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None
+            type=xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None
+            label=xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None
+            title=xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None
+            id=xx['id'] if 'id' in xx.attrs.keys() else None
+            dimension=xx.findChild().text.strip()
+            members=xx.find_all(re.compile('.*member$'))
+            yield (parentrole,type,label,title,id,dimension,members)
+        # yield (parentrole, type, label, title, id, dimension, members)
+
+
     def parse_edimensions_rend(self,soup,path):
         # print(f'parse_edimensions - {path}')
         temp_list1=[]
         temp_list2=[]
         columns1=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'dimension']
         columns2=['version','rinok', 'entity', 'parentrole', 'dimension_id', 'member','linkrole','arcrole','axis']
-        soup=soup.find_all_next('df:explicitdimension')
+        soup=soup.find_all_next(re.compile('df:explicitdimension$'))
         for parentrole, type, label, title, id, dimension, members in self.generator_2(soup):
             temp_list1.append([self.version, self.rinok, os.path.basename(path),
                                parentrole, type, label, title, id, dimension
@@ -247,57 +285,35 @@ class c_parseToDf():
     #     df_va_covers = pd.DataFrame(columns=['rinok', 'entity', 'parentrole','type', 'label', 'title', 'id','values'])
 
     def parseAspectnodes(self,path):
-        if self.parsetag(path,'linkbase'):
-            soup=self.parsetag(path,'linkbase').find_all_next('table:aspectnode')
-        else:
-            soup = self.parsetag(path, 'link:linkbase').find_all_next('table:aspectnode')
+        soup=self.parsetag(path,'linkbase').find_all_next('table:aspectnode')
         temp_list = []
-        temp_list2 = []
-        temp_list3 = []
-        columns = ['version', 'rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id']
-        columns2 = ['version', 'rinok', 'entity', 'parentrole', 'aspect_id','includeunreportedvalue', 'dimension']
-        columns3 = ['version', 'rinok', 'entity', 'parentrole', 'aspect_id', 'period']
+        columns = ['version', 'rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id','includeunreportedvalue','dimension','period']
         if soup:
             for xx in soup:
-                dimensionaspects=xx.find_all_next('table:dimensionaspect')
-                periodaspects=xx.find_all_next('table:periodaspect')
                 parentrole = xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None
-                for da in dimensionaspects:
-                    temp_list2.append([self.version,self.rinok, os.path.basename(path),
-                                      parentrole,
-                                      xx['id'],
-                                      da['includeunreportedvalue'] if 'includeunreportedvalue' in da.attrs.keys() else None,
-                                      da.text
-                                      ])
-                for pa in periodaspects:
-                    temp_list3.append([
-                                      self.version, self.rinok, os.path.basename(path),
-                                      parentrole,
-                                      xx['id'],
-                                      pa.text
-                                      ])
+                if xx.find(re.compile('.*dimensionaspect$')):
+                    includeunreportedvalue,dimension=xx.find(re.compile('.*dimensionaspect$'))['includeunreportedvalue'] if 'includeunreportedvalue' in xx.find(re.compile('.*dimensionaspect$')).attrs.keys() else None,xx.find(re.compile('.*dimensionaspect$')).text
+                else:
+                    includeunreportedvalue, dimension = None, None
+                if xx.find(re.compile('.*periodaspect$')):
+                    period = xx.find(re.compile('.*periodaspect$')).text
+                else:
+                    period = None
                 temp_list.append([self.version,self.rinok, os.path.basename(path),
                                         parentrole,
                                         xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
                                         xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
                                         xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
-                                        xx['id'] if 'id' in xx.attrs.keys() else None
+                                        xx['id'] if 'id' in xx.attrs.keys() else None,
+                                        includeunreportedvalue,dimension,period
                                         ])
         df_aspectnodes = pd.DataFrame(data=temp_list, columns=columns)
-        df_aspectnodes_d=pd.DataFrame(data=temp_list2, columns=columns2)
-        df_aspectnodes_p = pd.DataFrame(data=temp_list3, columns=columns3)
         self.appendDfs_Dic(self.df_aspectnodes_Dic, df_aspectnodes)
-        self.appendDfs_Dic(self.df_aspectnodes_d_Dic, df_aspectnodes_d)
-        self.appendDfs_Dic(self.df_aspectnodes_p_Dic, df_aspectnodes_p)
-        del df_aspectnodes, temp_list,temp_list2,temp_list3,df_aspectnodes_d,df_aspectnodes_p
+        del df_aspectnodes, temp_list
 
     def parseRulenodes(self,path):
         # try:
-        if self.parsetag(path,'linkbase'):
-            soup=self.parsetag(path,'linkbase').find_all_next('table:rulenode')
-        else:
-            soup = self.parsetag(path,'link:linkbase').find_all_next('table:rulenode')
-
+        soup=self.parsetag(path,'linkbase').find_all_next(re.compile('.*rulenode$'))
         temp_list1 = []
         temp_list2 = []
         temp_list3 = []
@@ -309,9 +325,9 @@ class c_parseToDf():
         if soup:
             for xx in soup:
                 parentrole = xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None
-                nexttag_e = xx.find('formula:explicitdimension')
-                nexttag_p = xx.find('formula:period')
-                nexttag_c = xx.find('formula:concept')
+                nexttag_e = xx.find(re.compile('formula:explicitdimension$'))
+                nexttag_p = xx.find(re.compile('formula:period$'))
+                nexttag_c = xx.find(re.compile('formula:concept$'))
                 temp_list1.append([self.version,self.rinok, os.path.basename(path),
                                         parentrole,
                                         xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
@@ -360,28 +376,20 @@ class c_parseToDf():
             parentrole = xx.parent.parent['xlink:role'] if 'xlink:role' in xx.parent.parent.attrs.keys() else None
             rulenode_id = xx.parent['id'] if 'id' in xx.parent.attrs.keys() else None
             tag = xx['tag'] if 'tag' in xx.attrs.keys() else None
-            if xx.find('formula:period'):
-                period_instant = xx.find('formula:period').find('formula:instant')['value'] if xx.find(
-                    'formula:period').find('formula:instant') else None
-                period_start = xx.find('formula:period').find('formula:duration')['start'] if xx.find(
-                    'formula:period').find('formula:duration') else None
-                period_end = xx.find('formula:period').find('formula:duration')['end'] if xx.find('formula:period').find(
-                    'formula:duration') else None
+            if xx.find(re.compile('.*period$')):
+                period_instant = xx.find(re.compile('.*period$')).find(re.compile('.*instant$'))['value'] if xx.find(re.compile('.*period$')).find(re.compile('.*instant$')) else None
+                period_start = xx.find(re.compile('.*period$')).find(re.compile('.*duration$'))['start'] if xx.find(re.compile('.*period$')).find(re.compile('.*duration$')) else None
+                period_end = xx.find(re.compile('.*period$')).find(re.compile('.*duration$'))['end'] if xx.find(re.compile('.*period$')).find(re.compile('.*duration$')) else None
             else:
                 period_instant,period_start,period_end = None,None,None
-            concept = xx.find('formula:concept').find('formula:qname').text if xx.find('formula:concept') else None
-            dimension = xx.find('formula:explicitdimension')['dimension'] if xx.find(
-                'formula:explicitdimension') else None
-            member = xx.find('formula:explicitdimension').find('formula:member').find('formula:qname').text if xx.find(
-                'formula:explicitdimension') else None
+            concept = xx.find(re.compile('.*concept$')).find(re.compile('.*qname$')).text if xx.find(re.compile('.*concept$')) else None
+            dimension = xx.find(re.compile('.*explicitdimension$'))['dimension'] if xx.find(re.compile('.*explicitdimension$')) else None
+            member = xx.find(re.compile('.*explicitdimension$')).find(re.compile('.*member$')).find(re.compile('.*qname$')).text if xx.find(re.compile('.*explicitdimension$')) else None
             yield (parentrole, rulenode_id, tag, period_instant,period_start,period_end,concept,dimension,member)
         # yield (member,linkrole,arcrole,axis)
 
     def parseRulesets(self,path):
-        if self.parsetag(path,'linkbase'):
-            soup=self.parsetag(path,'linkbase').find_all_next('table:ruleset')
-        else:
-            soup = self.parsetag(path,'link:linkbase').find_all_next('table:rulenode')
+        soup=self.parsetag(path,'linkbase').find_all_next(re.compile('.*ruleset$'))
         columns=['version','rinok', 'entity','parentrole', 'rulenode_id','tag', 'per_instant','per_start','per_end','concept','dimension','member']
         temp_list=[]
         for parentrole, rulenode_id, tag, period_instant,period_start,period_end,concept,dimension,member in self.generator_rulesets(soup):
@@ -417,9 +425,9 @@ class c_parseToDf():
                     #print(xx['name'])
                     attrs=restriction.findChildren()
                     for aa in attrs:
-                        if aa.name == 'xsd:pattern':
+                        if re.search('.*pattern$',aa.name):
                             pattern = aa['value']
-                        elif aa.name == 'xsd:minlength':
+                        elif re.search('.*minlength$',aa.name):
                             minlength = aa['value']
                 temp_list.append([
                     self.version,rinok,entity,
@@ -450,7 +458,7 @@ class c_parseToDf():
         # print(f'Linkbaserefs - {full_file_path}')
         temp_list = []
         columns = ['version', 'rinok', 'entity', 'uri_table', 'uri_razdel', 'id']
-        dict_with_lbrfs = soup.find_all('link:roletype')
+        dict_with_lbrfs = soup.find_all(re.compile('.*roletype$'))
         if dict_with_lbrfs:
             for xx in dict_with_lbrfs:
                 temp_list.append([self.version, self.rinok, os.path.basename(full_file_path),
@@ -466,7 +474,7 @@ class c_parseToDf():
         #print(f'Linkbaserefs - {full_file_path}')
         temp_list=[]
         columns=['version','rinok', 'entity', 'targetnamespace', 'type', 'href']
-        dict_with_lbrfs=soup.find_all('link:linkbaseref')
+        dict_with_lbrfs=soup.find_all(re.compile('.*linkbaseref$'))
         if dict_with_lbrfs:
             for xx in dict_with_lbrfs:
                 temp_list.append([self.version,self.rinok, os.path.basename(full_file_path),
@@ -484,11 +492,11 @@ class c_parseToDf():
         columns=['version','rinok', 'entity', 'id', 'roleuri', 'definition', 'uo_pres','uo_def', 'uo_gen']
         if dict_with_rltps:
             for xx in dict_with_rltps:
-                usedon = [yy.contents[0] for yy in xx.findAll('link:usedon')]
+                usedon = [yy.contents[0] for yy in xx.findAll(re.compile('.*usedon$'))]
                 temp_list.append([self.version,self.rinok, os.path.basename(full_file_path),
                                             xx['id'] if 'id' in xx.attrs.keys() else None,
                                             xx['roleuri'] if 'roleuri' in xx.attrs.keys() else None,
-                                            xx.find_next('link:definition').contents[0] if xx.find_next('link:definition') else None,
+                                            xx.find(re.compile('.*definition$')).contents[0] if xx.find(re.compile('.*definition$')) else None,
                                             1 if 'link:presentationLink' in usedon else 0, \
                                             1 if 'link:definitionLink' in usedon else 0, \
                                             1 if 'gen:link' in usedon else 0])
@@ -626,6 +634,6 @@ class c_parseToDf():
             ff=f.read()
         soup=BeautifulSoup(ff,'lxml')
         soup_root=soup.contents[2]
-        soup_tree=soup_root.find_next(main_tree)
+        soup_tree=soup_root.find(re.compile(f'.*{main_tree}$'))
         return soup_tree
 

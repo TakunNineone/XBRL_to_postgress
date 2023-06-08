@@ -5,7 +5,7 @@ import psycopg2
 from sqlalchemy import create_engine
 
 print('begin',datetime.datetime.now())
-conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/testdb'
+conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/taxonomy_db'
 
 db = create_engine(conn_string)
 conn=db.connect()
@@ -13,11 +13,11 @@ conn1 = psycopg2.connect(user="postgres",
                               password="124kosm21",
                               host="127.0.0.1",
                               port="5432",
-                              database="testdb")
+                              database="taxonomy_db")
 print(conn)
 print(conn1)
 
-version='final_5_2_j'
+version='final_5_2'
 period='2023-03-31'
 
 #conn1.autocommit = True
@@ -38,7 +38,7 @@ gc.collect()
 
 #['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']
 #for rinok in [['operatory','oper']]:
-for rinok in [['brk','brk'],['nfo','nfo'],['ins','ins']]:
+for rinok in [['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']]:
     # try:
         print('parseTab', rinok)
         ss1 = parseTab.c_parseTab(version, rinok[0], rinok[1],period)

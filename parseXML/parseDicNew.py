@@ -1,4 +1,6 @@
 import os,gc
+import re
+
 import parseToDf
 import warnings
 warnings.filterwarnings("ignore")
@@ -45,26 +47,26 @@ class c_parseDic():
 
 
     def parseDic(self):
-        soup_dic = self.df.parsetag(self.path_dic, 'xsd:appinfo')
-        soup_label = self.df.parsetag(self.path_label, 'link:linkbase')
-        try: soup_def = self.df.parsetag(self.path_definition, 'link:linkbase')
+        soup_dic = self.df.parsetag(self.path_dic,'appinfo')
+        soup_label = self.df.parsetag(self.path_label, 'linkbase')
+        try: soup_def = self.df.parsetag(self.path_definition, 'linkbase')
         except: soup_def = None
-        try: soup_pres=self.df.parsetag(self.path_pres,'link:linkbase')
+        try: soup_pres=self.df.parsetag(self.path_pres,'linkbase')
         except: soup_pres = None
-        def t1(): self.df.parseRoletypes(soup_dic.find_all('link:roletype'),self.path_dic)
-        def t2(): self.df.parseElements(soup_dic.find_all_next('xsd:element'),self.path_dic)
+        def t1(): self.df.parseRoletypes(soup_dic.find_all(re.compile('.*roletype$')),self.path_dic)
+        def t2(): self.df.parseElements(soup_dic.find_all_next(re.compile('.*element$')),self.path_dic)
 
-        def t3(): self.df.parseLocators(soup_label.find_all('link:loc'),self.path_label,'label')
-        def t4(): self.df.parseLabels(soup_label.find_all('link:label'), self.path_label)
-        def t5(): self.df.parseArcs(soup_label.find_all('link:labelarc'),self.path_label,'label')
+        def t3(): self.df.parseLocators(soup_label.find_all(re.compile('.*loc$')),self.path_label,'label')
+        def t4(): self.df.parseLabels(soup_label.find_all(re.compile('.*label$')), self.path_label)
+        def t5(): self.df.parseArcs(soup_label.find_all(re.compile('.*labelarc$')),self.path_label,'label')
 
-        def t6(): self.df.parseRolerefs(soup_def.find_all('link:roleref') if soup_def else None,self.path_definition,'definition')
-        def t7(): self.df.parseLocators(soup_def.find_all_next('link:loc') if soup_def else None, self.path_definition, 'definition')
-        def t8(): self.df.parseArcs(soup_def.find_all_next('link:definitionarc') if soup_def else None, self.path_definition, 'definition')
+        def t6(): self.df.parseRolerefs(soup_def.find_all(re.compile('.*roleref$')) if soup_def else None,self.path_definition,'definition')
+        def t7(): self.df.parseLocators(soup_def.find_all_next(re.compile('.*loc$')) if soup_def else None, self.path_definition, 'definition')
+        def t8(): self.df.parseArcs(soup_def.find_all_next(re.compile('.*definitionarc$')) if soup_def else None, self.path_definition, 'definition')
 
-        def t9(): self.df.parseRolerefs(soup_pres.find_all('link:roleref') if soup_pres else None, self.path_pres, 'presentation')
-        def t10(): self.df.parseLocators(soup_pres.find_all_next('link:loc') if soup_pres else None, self.path_pres, 'presentation')
-        def t11(): self.df.parseArcs(soup_pres.find_all_next('link:presentationarc') if soup_pres else None, self.path_pres, 'presentation')
+        def t9(): self.df.parseRolerefs(soup_pres.find_all(re.compile('.*roleref$')) if soup_pres else None, self.path_pres, 'presentation')
+        def t10(): self.df.parseLocators(soup_pres.find_all_next(re.compile('.*loc$')) if soup_pres else None, self.path_pres, 'presentation')
+        def t11(): self.df.parseArcs(soup_pres.find_all_next(re.compile('.*presentationarc$')) if soup_pres else None, self.path_pres, 'presentation')
         defs=[t1,t2,t3,t4,t5,t6, t7, t8,t9,t10,t11]
         #defs = [t2]
         with ThreadPool(processes=11) as pool:
