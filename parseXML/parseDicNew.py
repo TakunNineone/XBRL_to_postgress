@@ -56,16 +56,16 @@ class c_parseDic():
         def t1(): self.df.parseRoletypes(soup_dic.find_all(re.compile('.*roletype$')),self.path_dic)
         def t2(): self.df.parseElements(soup_dic.find_all_next(re.compile('.*element$')),self.path_dic)
 
-        def t3(): self.df.parseLocators(soup_label.find_all(re.compile('.*loc$')),self.path_label,'label')
+        def t3(): self.df.parseLocators(soup_label.find_all(re.compile('.{0,5}loc$')),self.path_label,'label')
         def t4(): self.df.parseLabels(soup_label.find_all(re.compile('.*label$')), self.path_label)
         def t5(): self.df.parseArcs(soup_label.find_all(re.compile('.*labelarc$')),self.path_label,'label')
 
         def t6(): self.df.parseRolerefs(soup_def.find_all(re.compile('.*roleref$')) if soup_def else None,self.path_definition,'definition')
-        def t7(): self.df.parseLocators(soup_def.find_all_next(re.compile('.*loc$')) if soup_def else None, self.path_definition, 'definition')
+        def t7(): self.df.parseLocators(soup_def.find_all_next(re.compile('.{0,5}loc$')) if soup_def else None, self.path_definition, 'definition')
         def t8(): self.df.parseArcs(soup_def.find_all_next(re.compile('.*definitionarc$')) if soup_def else None, self.path_definition, 'definition')
 
         def t9(): self.df.parseRolerefs(soup_pres.find_all(re.compile('.*roleref$')) if soup_pres else None, self.path_pres, 'presentation')
-        def t10(): self.df.parseLocators(soup_pres.find_all_next(re.compile('.*loc$')) if soup_pres else None, self.path_pres, 'presentation')
+        def t10(): self.df.parseLocators(soup_pres.find_all_next(re.compile('.{0,5}loc$')) if soup_pres else None, self.path_pres, 'presentation')
         def t11(): self.df.parseArcs(soup_pres.find_all_next(re.compile('.*presentationarc$')) if soup_pres else None, self.path_pres, 'presentation')
         defs=[t1,t2,t3,t4,t5,t6, t7, t8,t9,t10,t11]
         #defs = [t2]

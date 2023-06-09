@@ -79,15 +79,16 @@ class c_parseToDf():
         self.df_messages_Dic.append(df_messages)
         del df_messages, temp_list
 
-    def parse_assertions(self,soup,path):
+    def parse_assertions(self,soup,path,tag):
         # print(f'parse_assertions - {path}')
         temp_list = []
-        columns=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'test','variables', 'aspectmodel','implicitfiltering']
-        soup=soup.find_all_next(re.compile('.*valueassertion$'))
+        columns=['version','rinok', 'entity', 'parentrole','assert_type', 'type', 'label', 'title', 'id', 'test','variables', 'aspectmodel','implicitfiltering']
+        # soup=soup.find_all_next(re.compile('.*valueassertion$'))
         for xx in soup:
             parentrole = xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
             temp_list.append([self.version,self.rinok, os.path.basename(path),
                                     parentrole,
+                                    tag,
                                     xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
                                     xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
                                     xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,

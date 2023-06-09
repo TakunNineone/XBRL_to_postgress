@@ -73,7 +73,7 @@ class c_parseTab():
                 pool.map(self.parsetab, tabs)
 
     def parsetab(self,schemalocationnamespace):
-        print(schemalocationnamespace)
+        # print(schemalocationnamespace)
 
         tab_temp=f"{schemalocationnamespace[1]}\\"
         schema_temp=schemalocationnamespace[0]
@@ -98,10 +98,11 @@ class c_parseTab():
                 def t2(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablearc$')),path,'formula')
                 def t3(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablefilterarc$')), path, 'formula')
                 def t3_2(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablesetfilterarc$')), path, 'formula')
-                def t4(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*arc$')), path, 'formula')
-                def t5(): self.df.parseLocators(soup_formula.find_all_next(re.compile('.*loc$')),path,'formula')
+                def t4(): self.df.parseArcs(soup_formula.find_all_next(re.compile(r'^.{0,4}arc$')), path, 'formula')
+                def t5(): self.df.parseLocators(soup_formula.find_all_next(re.compile(r'^.{0,5}loc$')),path,'formula')
                 def t6(): self.df.parseLabels(soup_formula.find_all_next(re.compile('.*message$')),path)
-                def t7(): self.df.parse_assertions(soup_formula,path)
+                def t7(): self.df.parse_assertions(soup_formula.find_all_next(re.compile('.*valueassertion$')),path,'valueassertion'),
+                def t7_2(): self.df.parse_assertions(soup_formula.find_all_next(re.compile('.*existenceassertion$')), path, 'existenceassertion')
                 def t8(): self.df.parse_concepts(soup_formula,path)
                 def t9(): self.df.parse_factvars(soup_formula,path)
                 def t10(): self.df.parse_tdimensions(soup_formula,path)
@@ -110,9 +111,9 @@ class c_parseTab():
                 def t13(): self.df.parse_assertionset(soup_formula,path)
                 def t14(): self.df.parse_precond(soup_formula,path)
                 def t15(): self.df.parse_messages(soup_formula,path)
-                t_all=[t0,t1,t2,t3,t3_2,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15]
+                t_all=[t0,t1,t2,t3,t3_2,t4,t5,t6,t7,t7_2,t8,t9,t10,t11,t12,t13,t14,t15]
 
-                with ThreadPool(processes=17) as pool:
+                with ThreadPool(processes=18) as pool:
                    pool.map(self.df.writeThread, t_all)
         gc.collect()
 
@@ -232,8 +233,8 @@ class c_parseTab():
                 }
 
 if __name__ == "__main__":
-    ss=c_parseTab('final_5_2','bfo','bfo','2023-03-31')
-    tables=ss.startParse()
+    ss=c_parseTab('final_5_2','purcb','purcb','2023-03-31')
+   # tables=ss.startParse()
 
-    #ss.parsetab(['../tab/FR_4_012_01_01/FR_4_012_01_01.xsd', 'http://www.cbr.ru/xbrl/bfo/rep/2023-03-31/tab/FR_4_012_01_01'])
+    ss.parsetab(['../tab/SR_0420312/SR_0420312.xsd', 'http://www.cbr.ru/xbrl/nso/purcb/rep/2023-03-31/tab/SR_0420312'])
     None
