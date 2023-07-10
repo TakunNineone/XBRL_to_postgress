@@ -188,11 +188,10 @@ class c_parseTab():
         def t4():self.df.parseArcs(soup.find_all(re.compile('.*tablebreakdownarc$')),path,'table:tablebreakdownarc')
         def t5():self.df.parseArcs(soup.find_all_next(re.compile('.*definitionnodesubtreearc$')),path,'table:definitionnodesubtreearc')
         def t6():self.df.parseArcs(soup.find_all_next(re.compile('.*aspectnodefilterarc$')), path,'table:aspectnodefilterarc')
-        def t7():self.df.parseArcs(soup.find_all_next(re.compile('.*tablebreakdownarc$')),path,'table:tablebreakdownarc')
-        def t8():self.df.parseArcs(soup.find_all_next(re.compile('.*breakdowntreearc$')), path, 'table:breakdowntreearc')
-        def t9():self.df.parse_edimensions_rend(soup,path)
-        t_all = [t1, t2, t3, t4, t5, t6, t7, t8, t9]
-        with ThreadPool(processes=9) as pool:
+        def t7():self.df.parseArcs(soup.find_all_next(re.compile('.*breakdowntreearc$')), path, 'table:breakdowntreearc')
+        def t8():self.df.parse_edimensions_rend(soup,path)
+        t_all = [t1, t2, t3, t4, t5, t6, t7, t8]
+        with ThreadPool(processes=8) as pool:
             pool.map(self.df.writeThread, t_all)
         gc.collect()
 

@@ -358,7 +358,7 @@ class c_parseToDf():
                                                    xx['id'] if 'id' in xx.attrs.keys() else None,
                                                    nexttag_p.find().name.replace('formula:',''),
                                                    nexttag_p.find()['start'] if 'start' in nexttag_p.find().attrs.keys() else nexttag_p.find()['value'] if 'value' in nexttag_p.find().attrs.keys() else None,
-                                                   nexttag_p.find()['end'] if 'end' in nexttag_p.find().attrs.keys() else nexttag_p.find()['value'] if 'value' in nexttag_p.find().attrs.keys() else None
+                                                   nexttag_p.find()['end'] if 'end' in nexttag_p.find().attrs.keys() else None
                                                    ])
         df_rulenodes=pd.DataFrame(data=temp_list1,columns=columns1)
         df_rulenodes_e=pd.DataFrame(data=temp_list2,columns=columns2)
@@ -415,6 +415,10 @@ class c_parseToDf():
                     qname_rep = 'ifrs-full'
                     rinok='bfo'
                     entity='dictionary.xsd'
+                if self.rinok=='eps':
+                    qname_rep='cbr-coa-dic'
+                    rinok=self.rinok
+                    entity=os.path.basename(full_file_path)
                 else:
                     rinok=self.rinok
                     entity=os.path.basename(full_file_path)

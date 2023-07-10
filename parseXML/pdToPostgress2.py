@@ -19,7 +19,7 @@ conn1 = psycopg2.connect(user="postgres",
 print(conn)
 print(conn1)
 
-version='final_5_2_k'
+version='final_6_0_brk'
 period='2023-03-31'
 
 #conn1.autocommit = True
