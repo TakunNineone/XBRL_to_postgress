@@ -326,9 +326,9 @@ class c_parseToDf():
         if soup:
             for xx in soup:
                 parentrole = xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None
-                nexttag_e = xx.find(re.compile('formula:explicitdimension$'))
-                nexttag_p = xx.find(re.compile('formula:period$'))
-                nexttag_c = xx.find(re.compile('formula:concept$'))
+                nexttag_e = xx.find_all(re.compile('formula:explicitdimension$'))
+                nexttag_p = xx.find_all(re.compile('formula:period$'))
+                nexttag_c = xx.find_all(re.compile('formula:concept$'))
                 temp_list1.append([self.version,self.rinok, os.path.basename(path),
                                         parentrole,
                                         xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
@@ -340,26 +340,29 @@ class c_parseToDf():
                                         xx['tagselector'] if 'tagselector' in xx.attrs.keys() else None
                                         ])
                 if nexttag_e:
-                    temp_list2.append([self.version,self.rinok, os.path.basename(path),
-                                                     parentrole,
-                                                     xx['id'] if 'id' in xx.attrs.keys() else None,
-                                                     nexttag_e['dimension'] if 'dimension' in nexttag_e.attrs.keys() else None,
-                                                     nexttag_e.text.strip()
-                                                     ])
+                    for ee in nexttag_e:
+                        temp_list2.append([self.version,self.rinok, os.path.basename(path),
+                                                         parentrole,
+                                                         xx['id'] if 'id' in xx.attrs.keys() else None,
+                                                         ee['dimension'] if 'dimension' in ee.attrs.keys() else None,
+                                                         ee.text.strip()
+                                                         ])
                 if nexttag_c:
-                    temp_list3.append([self.version,self.rinok, os.path.basename(path),
-                                                   parentrole,
-                                                   xx['id'] if 'id' in xx.attrs.keys() else None,
-                                                   nexttag_c.text.strip()
-                                                   ])
+                    for cc in nexttag_c:
+                        temp_list3.append([self.version,self.rinok, os.path.basename(path),
+                                                       parentrole,
+                                                       xx['id'] if 'id' in xx.attrs.keys() else None,
+                                                       cc.text.strip()
+                                                       ])
                 if nexttag_p:
-                    temp_list4.append([self.version,self.rinok, os.path.basename(path),
-                                                   parentrole,
-                                                   xx['id'] if 'id' in xx.attrs.keys() else None,
-                                                   nexttag_p.find().name.replace('formula:',''),
-                                                   nexttag_p.find()['start'] if 'start' in nexttag_p.find().attrs.keys() else nexttag_p.find()['value'] if 'value' in nexttag_p.find().attrs.keys() else None,
-                                                   nexttag_p.find()['end'] if 'end' in nexttag_p.find().attrs.keys() else None
-                                                   ])
+                    for pp in nexttag_p:
+                        temp_list4.append([self.version,self.rinok, os.path.basename(path),
+                                                       parentrole,
+                                                       xx['id'] if 'id' in xx.attrs.keys() else None,
+                                                       pp.find().name.replace('formula:',''),
+                                                       pp.find()['start'] if 'start' in pp.find().attrs.keys() else pp.find()['value'] if 'value' in pp.find().attrs.keys() else None,
+                                                       pp.find()['end'] if 'end' in pp.find().attrs.keys() else None
+                                                       ])
         df_rulenodes=pd.DataFrame(data=temp_list1,columns=columns1)
         df_rulenodes_e=pd.DataFrame(data=temp_list2,columns=columns2)
         df_rulenodes_c=pd.DataFrame(data=temp_list3, columns=columns3)
