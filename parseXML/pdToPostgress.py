@@ -5,7 +5,7 @@ import psycopg2
 from sqlalchemy import create_engine
 
 print('begin',datetime.datetime.now())
-conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/testdb'
+conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/taxonomy_db'
 
 db = create_engine(conn_string)
 conn=db.connect()
@@ -13,7 +13,7 @@ conn1 = psycopg2.connect(user="postgres",
                               password="124kosm21",
                               host="127.0.0.1",
                               port="5432",
-                              database="testdb")
+                              database="taxonomy_db")
 print(conn)
 print(conn1)
 
@@ -137,7 +137,7 @@ for xx in df_list.keys():
 del df_list
 gc.collect()
 
-# ss=parseTab.c_parseTab(version,'bfo','bfo')
+# ss=parseTab.c_parseTab(version,'bfo','bfo',period)
 # df_list=ss.startParse()
 # print(df_list.keys())
 # str_headers=''

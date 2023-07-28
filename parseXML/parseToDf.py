@@ -465,15 +465,17 @@ class c_parseToDf():
     def parseTableParts(self, soup, full_file_path):
         # print(f'Linkbaserefs - {full_file_path}')
         temp_list = []
-        columns = ['version', 'rinok', 'entity', 'uri_table', 'uri_razdel', 'id']
+        columns = ['version', 'rinok', 'entity', 'uri_table', 'uri_razdel', 'id','order']
         dict_with_lbrfs = soup.find_all(re.compile('.*roletype$'))
         if dict_with_lbrfs:
+            i=0
             for xx in dict_with_lbrfs:
+                i+=1
                 temp_list.append([self.version, self.rinok, os.path.basename(full_file_path),
                                   xx.parent.parent.parent['targetnamespace'] if 'targetnamespace' in xx.parent.parent.parent.attrs.keys() else None,
                                   xx['roleuri'] if 'roleuri' in xx.attrs.keys() else None,
-                                  xx['id'] if 'id' in xx.attrs.keys() else None
-                                  ])
+                                  xx['id'] if 'id' in xx.attrs.keys() else None,
+                                  i])
         df_tableparts = pd.DataFrame(data=temp_list, columns=columns)
         self.appendDfs_Dic(self.df_tableparts_Dic, df_tableparts)
         del df_tableparts, temp_list
@@ -499,6 +501,7 @@ class c_parseToDf():
         temp_list=[]
         columns=['version','rinok', 'entity', 'id', 'roleuri', 'definition', 'uo_pres','uo_def', 'uo_gen']
         if dict_with_rltps:
+            i=0
             for xx in dict_with_rltps:
                 usedon = [yy.contents[0] for yy in xx.findAll(re.compile('.*usedon$'))]
                 temp_list.append([self.version,self.rinok, os.path.basename(full_file_path),
