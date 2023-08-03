@@ -190,8 +190,9 @@ class c_parseTab():
         def t6():self.df.parseArcs(soup.find_all_next(re.compile('.*aspectnodefilterarc$')), path,'table:aspectnodefilterarc')
         def t7():self.df.parseArcs(soup.find_all_next(re.compile('.*breakdowntreearc$')), path, 'table:breakdowntreearc')
         def t8():self.df.parse_edimensions_rend(soup,path)
-        t_all = [t1, t2, t3, t4, t5, t6, t7, t8]
-        with ThreadPool(processes=8) as pool:
+        def t9():self.df.parseConceptRelationshipNode(soup,path)
+        t_all = [t1, t2, t3, t4, t5, t6, t7, t8,t9]
+        with ThreadPool(processes=9) as pool:
             pool.map(self.df.writeThread, t_all)
         gc.collect()
 
@@ -203,6 +204,7 @@ class c_parseTab():
         return {
                 'df_rulenodes':self.df.concatDfs(self.df.df_rulenodes_Dic),
                 'df_aspectnodes': self.df.concatDfs(self.df.df_aspectnodes_Dic),
+                'df_rend_conceptrelnodes': self.df.concatDfs(self.df.df_rend_conceptrelnodes_Dic),
                 'df_rulenodes_c':self.df.concatDfs(self.df.df_rulenodes_c_Dic),
                 'df_rulenodes_p':self.df.concatDfs(self.df.df_rulenodes_p_Dic),
                 'df_rulenodes_e':self.df.concatDfs(self.df.df_rulenodes_e_Dic),
@@ -232,8 +234,8 @@ class c_parseTab():
                 }
 
 if __name__ == "__main__":
-    ss=c_parseTab('final_5_2','purcb','purcb','2023-03-31')
-   # tables=ss.startParse()
+    ss=c_parseTab('final_5_3_bfo','bfo','bfo','2024-01-01')
+    tables=ss.startParse()
 
-    ss.parsetab(['../tab/SR_0420312/SR_0420312.xsd', 'http://www.cbr.ru/xbrl/nso/purcb/rep/2023-03-31/tab/SR_0420312'])
+    #ss.parsetab(['../tab/SR_0420312/SR_0420312.xsd', 'http://www.cbr.ru/xbrl/nso/purcb/rep/2023-03-31/tab/SR_0420312'])
     None

@@ -10,6 +10,7 @@ class c_parseToDf():
     def __init__(self,taxonomy,rinok):
         self.rinok=rinok
         self.version=taxonomy
+        self.df_rend_conceptrelnodes_Dic=[]
         self.df_rulenodes_Dic = []
         self.df_aspectnodes_Dic = []
         self.df_rulenodes_e_Dic=[]
@@ -259,6 +260,26 @@ class c_parseToDf():
             yield (parentrole,type,label,title,id,dimension,members)
         # yield (parentrole, type, label, title, id, dimension, members)
 
+    def parseConceptRelationshipNode(self,soup,path):
+        temp_list = []
+        columns = ['version', 'rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'relationshipsource','linkrole','arcrole','formulaaxis','generations']
+        soup = soup.find_all_next(re.compile('.*conceptrelationshipnode$'))
+        for xx in soup:
+            temp_list.append([self.version, self.rinok, os.path.basename(path),
+                              xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
+                              xx['xlink:type'] if 'xlink:type' in xx.attrs.keys() else None,
+                              xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
+                              xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
+                              xx['id'] if 'id' in xx.attrs.keys() else None,
+                              xx.find(re.compile('.*relationshipsource$')).text,
+                              xx.find(re.compile('.*linkrole$')).text,
+                              xx.find(re.compile('.*arcrole$')).text,
+                              xx.find(re.compile('.*formulaaxis$')).text,
+                              xx.find(re.compile('.*generations$')).text
+                              ])
+        df_rend_conceptrelnodes=pd.DataFrame(data=temp_list,columns=columns)
+        self.df_rend_conceptrelnodes_Dic.append(df_rend_conceptrelnodes)
+        del df_rend_conceptrelnodes,temp_list
 
     def parse_edimensions_rend(self,soup,path):
         # print(f'parse_edimensions - {path}')

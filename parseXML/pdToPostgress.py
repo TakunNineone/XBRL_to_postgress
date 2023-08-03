@@ -5,7 +5,7 @@ import psycopg2
 from sqlalchemy import create_engine
 
 print('begin',datetime.datetime.now())
-conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/taxonomy_db'
+conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/bfo'
 
 db = create_engine(conn_string)
 conn=db.connect()
@@ -13,15 +13,53 @@ conn1 = psycopg2.connect(user="postgres",
                               password="124kosm21",
                               host="127.0.0.1",
                               port="5432",
-                              database="taxonomy_db")
+                              database="bfo")
 print(conn)
 print(conn1)
 
-version='final_5_2'
-period='2023-03-31'
+version='final_5_3_bfo'
+period='2024-01-01'
 
 #conn1.autocommit = True
 cursor = conn1.cursor()
+sql_delete="""
+delete from arcs;
+delete from aspectnodes;
+delete from catalog;
+delete from elements;
+delete from elements_labels;
+delete from entrypoints;
+delete from labels;
+delete from linkbaserefs;
+delete from locators;
+delete from messages;
+delete from preconditions;
+delete from preferred_labels;
+delete from rend_edimensions;
+delete from rend_edmembers;
+delete from rolerefs;
+delete from roletypes;
+delete from rulenodes;
+delete from rulenodes_c;
+delete from rulenodes_e;
+delete from rulenodes_p;
+delete from rulesets;
+delete from tableparts;
+delete from tables;
+delete from tableschemas;
+delete from taxpackage;
+delete from va_aspectcovers;
+delete from va_assertions;
+delete from va_assertionsets;
+delete from va_concepts;
+delete from va_edimensions;
+delete from va_edmembers;
+delete from va_factvars;
+delete from va_generals;
+delete from va_tdimensions;
+"""
+cursor.execute(sql_delete)
+conn1.commit()
 
 print('parseMetaInf', version)
 ss=parseMetaInf.c_parseMeta(version)
@@ -137,18 +175,18 @@ for xx in df_list.keys():
 del df_list
 gc.collect()
 
-# ss=parseTab.c_parseTab(version,'bfo','bfo',period)
-# df_list=ss.startParse()
-# print(df_list.keys())
-# str_headers=''
-# for xx in df_list.keys():
-#     headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
-#     for hh in headers:
-#         str_headers = str_headers + hh + '\n'
-#     str_headers = str_headers.strip()[:-1]
-#     df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
-# del df_list
-# gc.collect()
+ss=parseTab.c_parseTab(version,'bfo','bfo',period)
+df_list=ss.startParse()
+print(df_list.keys())
+str_headers=''
+for xx in df_list.keys():
+    headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
+    for hh in headers:
+        str_headers = str_headers + hh + '\n'
+    str_headers = str_headers.strip()[:-1]
+    df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
+del df_list
+gc.collect()
 
 conn1.commit()
 conn1.close()
