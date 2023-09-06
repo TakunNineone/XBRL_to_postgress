@@ -69,7 +69,7 @@ class c_parseTab():
         tabs=[[row['schemalocation'],row['namespace']] for index, row in self.df.df_tables.iterrows()]
 
         if tabs:
-            with ThreadPool(processes=500) as pool:
+            with ThreadPool(processes=60) as pool:
                 pool.map(self.parsetab, tabs)
 
     def parsetab(self,schemalocationnamespace):
@@ -94,7 +94,7 @@ class c_parseTab():
             for path in formulas:
                 # print(path)
                 soup_formula = self.df.parsetag(path,'linkbase')
-                def t0(): self.df.parse_generals(soup_formula.find_all(re.compile('.*generalvariable$')),path)
+                def t0(): self.df.parse_generals(soup_formula.find_all_next(re.compile('.*generalvariable$')),path)
                 def t1(): self.df.parseRolerefs(soup_formula.find_all(re.compile('.*roleref$')),path,'formula')
                 def t2(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablearc$')),path,'formula')
                 def t3(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablefilterarc$')), path, 'formula')
@@ -238,8 +238,8 @@ class c_parseTab():
                 }
 
 if __name__ == "__main__":
-    ss=c_parseTab('final_5_2_b','uk','uk','2023-03-31')
+    ss=c_parseTab('final_5_3_bfo','bfo','bfo','2024-01-01')
     tables=ss.startParse()
 
-    #ss.parsetab(['../tab/sr_nfo_2/sr_nfo_2.xsd', 'http://www.cbr.ru/xbrl/nso/purcb/rep/2023-03-31/tab/SR_0420312'])
+    #ss.parsetab(['../tab/SR_0420312/SR_0420312.xsd', 'http://www.cbr.ru/xbrl/nso/purcb/rep/2023-03-31/tab/SR_0420312'])
     None
