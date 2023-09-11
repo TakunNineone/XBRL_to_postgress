@@ -5,7 +5,7 @@ import psycopg2
 from sqlalchemy import create_engine
 
 print('begin',datetime.datetime.now())
-conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/bfo'
+conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/final_5_2_b'
 
 db = create_engine(conn_string)
 conn=db.connect()
@@ -13,12 +13,12 @@ conn1 = psycopg2.connect(user="postgres",
                               password="124kosm21",
                               host="127.0.0.1",
                               port="5432",
-                              database="bfo")
+                              database="final_5_2_b")
 print(conn)
 print(conn1)
 
-version='final_5_3_bfo'
-period='2024-01-01'
+version='final_5_2_b'
+period='2023-03-31'
 
 #conn1.autocommit = True
 cursor = conn1.cursor()
@@ -27,14 +27,14 @@ delete from arcs;
 delete from aspectnodes;
 delete from catalog;
 delete from elements;
-delete from elements_labels;
+--delete from elements_labels;
 delete from entrypoints;
 delete from labels;
 delete from linkbaserefs;
 delete from locators;
 delete from messages;
 delete from preconditions;
-delete from preferred_labels;
+--delete from preferred_labels;
 delete from rend_edimensions;
 delete from rend_edmembers;
 delete from rolerefs;
@@ -77,9 +77,8 @@ gc.collect()
 #['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']
 #['ins','ins'],['uk','uk'],['purcb','purcb'],['brk','brk'],['kra','kra'],['nfo','nfo'],['npf','npf'],['bki','bki'],['srki','srki']
 #for rinok in [['operatory','oper']]:
-for rinok in [['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']]:
+for rinok in [['purcb','purcb'],['operatory','oper'],['uk','uk'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']]:
     # try:
-        print('parseTab', rinok)
         ss1 = parseTab.c_parseTab(version, rinok[0], rinok[1],period)
         df_list1 = ss1.startParse()
         if len(df_list1.get('df_tables').index)!=0:

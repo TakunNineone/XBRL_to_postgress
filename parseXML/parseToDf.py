@@ -486,8 +486,10 @@ class c_parseToDf():
     def parseTableParts(self, soup, full_file_path):
         # print(f'Linkbaserefs - {full_file_path}')
         temp_list = []
-        columns = ['version', 'rinok', 'entity', 'uri_table', 'uri_razdel', 'id','order']
+        columns = ['version', 'rinok', 'entity', 'uri_table', 'uri_razdel', 'id','imports','order']
         dict_with_lbrfs = soup.find_all(re.compile('.*roletype$'))
+        dict_with_imports = soup.find_all(re.compile('.*import$'))
+        str_imports = ';'.join(xx['schemalocation'].split('/')[-1] for xx in dict_with_imports)
         if dict_with_lbrfs:
             i=0
             for xx in dict_with_lbrfs:
@@ -495,7 +497,7 @@ class c_parseToDf():
                 temp_list.append([self.version, self.rinok, os.path.basename(full_file_path),
                                   xx.parent.parent.parent['targetnamespace'] if 'targetnamespace' in xx.parent.parent.parent.attrs.keys() else None,
                                   xx['roleuri'] if 'roleuri' in xx.attrs.keys() else None,
-                                  xx['id'] if 'id' in xx.attrs.keys() else None,
+                                  xx['id'] if 'id' in xx.attrs.keys() else None,str_imports,
                                   i])
         df_tableparts = pd.DataFrame(data=temp_list, columns=columns)
         self.appendDfs_Dic(self.df_tableparts_Dic, df_tableparts)

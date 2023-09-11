@@ -51,6 +51,7 @@ class c_parseTab():
             for ep in os.listdir(path_supp):
                 if 'support' not in ep:
                     path_file = path_supp + ep
+                    print(path_file)
                     with open(path_file, 'rb') as f:
                         ff = f.read()
                     soup = BeautifulSoup(ff, 'lxml').contents[1].find_next(re.compile('.*schema$'))
@@ -234,7 +235,7 @@ class c_parseTab():
                 }
 
 if __name__ == "__main__":
-    ss=c_parseTab('final_5_3_bfo','bfo','bfo','2024-01-01')
+    ss=c_parseTab('final_5_2','purcb','purcb','2023-03-31')
     tables=ss.startParse()
 
     #ss.parsetab(['../tab/SR_0420312/SR_0420312.xsd', 'http://www.cbr.ru/xbrl/nso/purcb/rep/2023-03-31/tab/SR_0420312'])
