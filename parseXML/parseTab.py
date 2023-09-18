@@ -51,7 +51,6 @@ class c_parseTab():
             for ep in os.listdir(path_supp):
                 if 'support' not in ep:
                     path_file = path_supp + ep
-                    print(path_file)
                     with open(path_file, 'rb') as f:
                         ff = f.read()
                     soup = BeautifulSoup(ff, 'lxml').contents[1].find_next(re.compile('.*schema$'))
@@ -70,7 +69,7 @@ class c_parseTab():
         tabs=[[row['schemalocation'],row['namespace']] for index, row in self.df.df_tables.iterrows()]
 
         if tabs:
-            with ThreadPool(processes=60) as pool:
+            with ThreadPool(processes=500) as pool:
                 pool.map(self.parsetab, tabs)
 
     def parsetab(self,schemalocationnamespace):
@@ -93,8 +92,9 @@ class c_parseTab():
 
         if formulas:
             for path in formulas:
+                # print(path)
                 soup_formula = self.df.parsetag(path,'linkbase')
-                def t0(): self.df.parse_generals(soup_formula.find_all_next(re.compile('.*generalvariable$')),path)
+                def t0(): self.df.parse_generals(soup_formula.find_all(re.compile('.*generalvariable$')),path)
                 def t1(): self.df.parseRolerefs(soup_formula.find_all(re.compile('.*roleref$')),path,'formula')
                 def t2(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablearc$')),path,'formula')
                 def t3(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablefilterarc$')), path, 'formula')
@@ -114,8 +114,11 @@ class c_parseTab():
                 def t15(): self.df.parse_messages(soup_formula,path)
                 t_all=[t0,t1,t2,t3,t3_2,t4,t5,t6,t7,t7_2,t8,t9,t10,t11,t12,t13,t14,t15]
 
+
                 with ThreadPool(processes=18) as pool:
                    pool.map(self.df.writeThread, t_all)
+                del soup_formula
+
         gc.collect()
 
         rend = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
@@ -235,8 +238,8 @@ class c_parseTab():
                 }
 
 if __name__ == "__main__":
-    ss=c_parseTab('final_5_2','purcb','purcb','2023-03-31')
+    ss=c_parseTab('final_5_2_b','uk','uk','2023-03-31')
     tables=ss.startParse()
 
-    #ss.parsetab(['../tab/SR_0420312/SR_0420312.xsd', 'http://www.cbr.ru/xbrl/nso/purcb/rep/2023-03-31/tab/SR_0420312'])
+    #ss.parsetab(['../tab/sr_nfo_2/sr_nfo_2.xsd', 'http://www.cbr.ru/xbrl/nso/purcb/rep/2023-03-31/tab/SR_0420312'])
     None

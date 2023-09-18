@@ -5,7 +5,7 @@ import psycopg2
 from sqlalchemy import create_engine
 
 print('begin',datetime.datetime.now())
-conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/final_5_2_b'
+conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/final_5_2_0_4'
 
 db = create_engine(conn_string)
 conn=db.connect()
@@ -13,12 +13,12 @@ conn1 = psycopg2.connect(user="postgres",
                               password="124kosm21",
                               host="127.0.0.1",
                               port="5432",
-                              database="final_5_2_b")
+                              database="final_5_2_0_4")
 print(conn)
 print(conn1)
 
-version='final_5_2_b'
-period='2023-03-31'
+version='final_5_2_0_4'
+period='2023-09-30'
 
 #conn1.autocommit = True
 cursor = conn1.cursor()
@@ -58,8 +58,8 @@ delete from va_factvars;
 delete from va_generals;
 delete from va_tdimensions;
 """
-cursor.execute(sql_delete)
-conn1.commit()
+#cursor.execute(sql_delete)
+#conn1.commit()
 
 print('parseMetaInf', version)
 ss=parseMetaInf.c_parseMeta(version)
@@ -77,8 +77,9 @@ gc.collect()
 #['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']
 #['ins','ins'],['uk','uk'],['purcb','purcb'],['brk','brk'],['kra','kra'],['nfo','nfo'],['npf','npf'],['bki','bki'],['srki','srki']
 #for rinok in [['operatory','oper']]:
-for rinok in [['purcb','purcb'],['operatory','oper'],['uk','uk'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']]:
+for rinok in [['purcb','purcb'],['ins','ins'],['nfo','nfo'],['bki','bki']]:
     # try:
+        print('parseTab', rinok)
         ss1 = parseTab.c_parseTab(version, rinok[0], rinok[1],period)
         df_list1 = ss1.startParse()
         if len(df_list1.get('df_tables').index)!=0:
@@ -174,18 +175,18 @@ for xx in df_list.keys():
 del df_list
 gc.collect()
 
-ss=parseTab.c_parseTab(version,'bfo','bfo',period)
-df_list=ss.startParse()
-print(df_list.keys())
-str_headers=''
-for xx in df_list.keys():
-    headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
-    for hh in headers:
-        str_headers = str_headers + hh + '\n'
-    str_headers = str_headers.strip()[:-1]
-    df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
-del df_list
-gc.collect()
+# ss=parseTab.c_parseTab(version,'bfo','bfo',period)
+# df_list=ss.startParse()
+# print(df_list.keys())
+# str_headers=''
+# for xx in df_list.keys():
+#     headers = [xx.strip() + ' VARCHAR, ' for xx in df_list.get(xx).keys().values]
+#     for hh in headers:
+#         str_headers = str_headers + hh + '\n'
+#     str_headers = str_headers.strip()[:-1]
+#     df_list.get(xx).to_sql(xx[3:],conn,if_exists= 'append',index=False)
+# del df_list
+# gc.collect()
 
 conn1.commit()
 conn1.close()

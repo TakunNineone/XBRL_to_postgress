@@ -147,12 +147,13 @@ class c_parseToDf():
         temp_list = []
         columns=['version','rinok', 'entity', 'parentrole','label','title','id','test']
         for xx in soup:
+            # print(self.rinok,path)
             temp_list.append([self.version,self.rinok, os.path.basename(path),
                                         xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None,
                                         xx['xlink:label'] if 'xlink:label' in xx.attrs.keys() else None,
                                         xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None,
                                         xx['id'] if 'id' in xx.attrs.keys() else None,
-                                        xx['test'] if 'test' in xx.attrs.keys() else None,
+                                        xx['select'] if 'select' in xx.attrs.keys() else None,
                                         ])
         df_va_generals=pd.DataFrame(data=temp_list,columns=columns)
         self.df_va_generals_Dic.append(df_va_generals)
