@@ -58,8 +58,8 @@ delete from va_factvars;
 delete from va_generals;
 delete from va_tdimensions;
 """
-#cursor.execute(sql_delete)
-#conn1.commit()
+# cursor.execute(sql_delete)
+# conn1.commit()
 
 print('parseMetaInf', version)
 ss=parseMetaInf.c_parseMeta(version)

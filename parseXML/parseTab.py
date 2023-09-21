@@ -92,7 +92,6 @@ class c_parseTab():
 
         if formulas:
             for path in formulas:
-                # print(path)
                 soup_formula = self.df.parsetag(path,'linkbase')
                 def t0(): self.df.parse_generals(soup_formula.find_all_next(re.compile('.*generalvariable$')),path)
                 def t1(): self.df.parseRolerefs(soup_formula.find_all(re.compile('.*roleref$')),path,'formula')
@@ -114,11 +113,8 @@ class c_parseTab():
                 def t15(): self.df.parse_messages(soup_formula,path)
                 t_all=[t0,t1,t2,t3,t3_2,t4,t5,t6,t7,t7_2,t8,t9,t10,t11,t12,t13,t14,t15]
 
-
                 with ThreadPool(processes=18) as pool:
                    pool.map(self.df.writeThread, t_all)
-                del soup_formula
-
         gc.collect()
 
         rend = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
