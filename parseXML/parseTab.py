@@ -53,6 +53,7 @@ class c_parseTab():
                     path_file = path_supp + ep
                     with open(path_file, 'rb') as f:
                         ff = f.read()
+                        # print(path_file)
                     soup = BeautifulSoup(ff, 'lxml').contents[1].find_next(re.compile('.*schema$'))
                     namesps = soup.find_all(re.compile('.*import$'))
                     for xx in namesps:
@@ -92,7 +93,9 @@ class c_parseTab():
 
         if formulas:
             for path in formulas:
+
                 soup_formula = self.df.parsetag(path,'linkbase')
+
                 def t0(): self.df.parse_generals(soup_formula.find_all_next(re.compile('.*generalvariable$')),path)
                 def t1(): self.df.parseRolerefs(soup_formula.find_all(re.compile('.*roleref$')),path,'formula')
                 def t2(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablearc$')),path,'formula')
@@ -234,8 +237,8 @@ class c_parseTab():
                 }
 
 if __name__ == "__main__":
-    ss=c_parseTab('final_5_3_bfo','bfo','bfo','2024-01-01')
+    ss=c_parseTab('final_6','bfo','bfo','2024-11-01')
     tables=ss.startParse()
-
+    # ss.parsetab(['../tab/sr_0420250/sr_0420250.xsd', 'http://www.cbr.ru/xbrl/nso/npf/rep/2024-11-01/tab/sr_0420250'])
     #ss.parsetab(['../tab/SR_0420312/SR_0420312.xsd', 'http://www.cbr.ru/xbrl/nso/purcb/rep/2023-03-31/tab/SR_0420312'])
     None

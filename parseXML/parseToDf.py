@@ -668,7 +668,6 @@ class c_parseToDf():
         with open(filepath,'rb') as f:
             ff=f.read()
         soup=BeautifulSoup(ff,'lxml')
-        soup_root=soup.contents[2]
-        soup_tree=soup_root.find(re.compile(f'.*{main_tree}$'))
+        soup_tree=soup.find('html').find(re.compile(f'.*{main_tree}$'))
         return soup_tree
 
