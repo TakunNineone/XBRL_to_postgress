@@ -5,7 +5,7 @@ import psycopg2
 from sqlalchemy import create_engine
 
 print('begin', datetime.datetime.now())
-conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/final_6_5'
+conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/final_5_2'
 
 db = create_engine(conn_string)
 conn = db.connect()
@@ -13,28 +13,29 @@ conn1 = psycopg2.connect(user="postgres",
                          password="124kosm21",
                          host="127.0.0.1",
                          port="5432",
-                         database="final_6_5")
+                         database="final_5_2")
 print(conn)
 print(conn1)
 
-version = 'final_6_5'
-period = '2024-11-01'
+version = 'final_5_2'
+period = '2023-03-31'
 
 # conn1.autocommit = True
 cursor = conn1.cursor()
 sql_delete = """
+delete from tabletags;
 delete from arcs;
 delete from aspectnodes;
 delete from catalog;
 delete from elements;
---drop elements_labels;
+delete from elements_labels;
 delete from entrypoints;
 delete from labels;
 delete from linkbaserefs;
 delete from locators;
 delete from messages;
 delete from preconditions;
---drop preferred_labels;
+delete from preferred_labels;
 delete from rend_edimensions;
 delete from rend_edmembers;
 delete from rolerefs;
@@ -57,6 +58,7 @@ delete from va_edmembers;
 delete from va_factvars;
 delete from va_generals;
 delete from va_tdimensions;
+delete from rend_conceptrelnodes;
 """
 sql_create_functions = """
 CREATE OR REPLACE FUNCTION public.array_unique(
@@ -242,7 +244,6 @@ END;
 $BODY$;
 """
 sql_indexes = """
-create index arcs_v on arcs (version);
 create index elements_v  on elements (version);
 create index labels_v  on labels (version);
 create index linkbaserefs_v  on linkbaserefs (version);
@@ -273,7 +274,6 @@ create index rulesets_v  on rulesets (version);
 create index catalog_v  on catalog (version);
 create index taxpackage_v  on taxpackage (version);
 
-create index arcs_entity on arcs (entity);
 create index elements_entity  on elements (entity);
 create index labels_entity  on labels (entity);
 create index linkbaserefs_entity  on linkbaserefs (entity);
@@ -301,7 +301,6 @@ create index rend_edimensions_entity  on rend_edimensions (entity);
 create index rend_edmembers_entity  on rend_edmembers (entity);
 create index rulesets_entity  on rulesets (entity);
 
-create index arcs_parentrole on arcs (parentrole);
 create index labels_parentrole  on labels (parentrole);
 create index locators_parentrole  on locators (parentrole);
 create index rulenodes_parentrole  on rulenodes (parentrole);
@@ -323,7 +322,6 @@ create index rend_edimensions_parentrole  on rend_edimensions (parentrole);
 create index rend_edmembers_parentrole  on rend_edmembers (parentrole);
 create index rulesets_parentrole  on rulesets (parentrole);
 
-create index arcs_rinok on arcs (rinok);
 create index elements_rinok  on elements (rinok);
 create index labels_rinok  on labels (rinok);
 create index linkbaserefs_rinok  on linkbaserefs (rinok);
@@ -363,6 +361,7 @@ create index messages_rinok on messages (rinok);
 """
 sql_create_elements_labels = """
 create table elements_labels as 
+--insert into elements_labels
 select e.version,e.rinok,e.entity,e.name,e.id,e.qname,e.type,e.substitutiongroup,la.lang,la.label,la.role,e.abstract,la.text
 from 
 elements e 
@@ -373,6 +372,7 @@ left join labels la ON la.rinok = ae.rinok AND la.entity = ae.entity AND la.labe
 """
 sql_create_preferred_labels = """
 create table preferred_labels as
+--insert into preferred_labels
 select a.version,a.rinok,a.entity,a.parentrole,l.href_id,text
 from arcs a
 join locators l on l.label=a.arcto and l.version=a.version and l.rinok=a.rinok and l.entity=a.entity and a.parentrole=l.parentrole	
@@ -400,6 +400,7 @@ gc.collect()
 # ['ins','ins'],['uk','uk'],['purcb','purcb'],['brk','brk'],['kra','kra'],['nfo','nfo'],['npf','npf'],['bki','bki'],['srki','srki']
 # for rinok in [['operatory','oper']]:
 for rinok in [['npf','npf'],['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['srki','srki'],['sro','sro']]:
+# for rinok in [['npf','npf']]:
     # try:
     print('parseTab', rinok)
     ss1 = parseTab.c_parseTab(version, rinok[0], rinok[1], period)
@@ -499,7 +500,7 @@ gc.collect()
 
 
 cursor.execute(sql_indexes)
-cursor.execute(sql_create_functions)
+# cursor.execute(sql_create_functions)
 cursor.execute(sql_create_elements_labels)
 cursor.execute(sql_create_preferred_labels)
 

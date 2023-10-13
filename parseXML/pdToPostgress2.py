@@ -5,7 +5,7 @@ import psycopg2
 from sqlalchemy import create_engine
 
 print('begin', datetime.datetime.now())
-conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/final_6_5'
+conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/final_5_2'
 
 db = create_engine(conn_string)
 conn = db.connect()
@@ -13,12 +13,12 @@ conn1 = psycopg2.connect(user="postgres",
                          password="124kosm21",
                          host="127.0.0.1",
                          port="5432",
-                         database="final_6_5")
+                         database="final_5_2")
 print(conn)
 print(conn1)
 
-version = 'final_6_5'
-period = '2024-11-01'
+version = 'final_5_2'
+period = '2023-03-31'
 
 cursor = conn1.cursor()
 

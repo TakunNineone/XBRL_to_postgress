@@ -10,6 +10,7 @@ class c_parseToDf():
     def __init__(self,taxonomy,rinok):
         self.rinok=rinok
         self.version=taxonomy
+        self.df_tabletags_Dic=[]
         self.df_rend_conceptrelnodes_Dic=[]
         self.df_rulenodes_Dic = []
         self.df_aspectnodes_Dic = []
@@ -41,6 +42,15 @@ class c_parseToDf():
         self.df_preconditions_Dic=[]
         self.df_messages_Dic=[]
         self.df_tables = pd.DataFrame(columns=['version', 'rinok', 'entity', 'targetnamespace', 'schemalocation', 'namespace'])
+
+    def parse_tableTags(self,soup,path,tags_from):
+        temp_list=[]
+        columns = ['version','rinok','entity','tags','tag_from']
+        tags=list(set([tag.name for tag in soup.find_all()]))
+        temp_list.append([self.version,self.rinok,os.path.basename(path),tags,tags_from])
+        df_tableTags=pd.DataFrame(data=temp_list,columns=columns)
+        self.df_tabletags_Dic.append(df_tableTags)
+        del temp_list,df_tableTags
 
     def parse_precond(self,soup,path):
         temp_list = []
@@ -342,9 +352,9 @@ class c_parseToDf():
         temp_list3 = []
         temp_list4 = []
         columns1=['version','rinok', 'entity', 'parentrole', 'type', 'label', 'title', 'id', 'abstract', 'merge','tagselector']
-        columns2=['version','rinok', 'entity', 'parentrole', 'rulenode_id', 'dimension', 'member']
-        columns3=['version','rinok', 'entity', 'parentrole', 'rulenode_id','value']
-        columns4=['version','rinok', 'entity', 'parentrole', 'rulenode_id','period_type','start','end']
+        columns2=['version','rinok', 'entity', 'parentrole', 'rulenode_id','parent_tag','tag', 'dimension', 'member']
+        columns3=['version','rinok', 'entity', 'parentrole', 'rulenode_id','parent_tag','tag','value']
+        columns4=['version','rinok', 'entity', 'parentrole', 'rulenode_id','parent_tag','tag','period_type','start','end']
         if soup:
             for xx in soup:
                 parentrole = xx.parent['xlink:role'] if 'xlink:role' in xx.parent.attrs.keys() else None
@@ -366,6 +376,8 @@ class c_parseToDf():
                         temp_list2.append([self.version,self.rinok, os.path.basename(path),
                                                          parentrole,
                                                          xx['id'] if 'id' in xx.attrs.keys() else None,
+                                                         ee.parent.name,
+                                                         ee.parent.get('tag') if 'tag' in ee.parent.attrs.keys() else None,
                                                          ee['dimension'] if 'dimension' in ee.attrs.keys() else None,
                                                          ee.text.strip()
                                                          ])
@@ -374,17 +386,24 @@ class c_parseToDf():
                         temp_list3.append([self.version,self.rinok, os.path.basename(path),
                                                        parentrole,
                                                        xx['id'] if 'id' in xx.attrs.keys() else None,
+                                                       cc.parent.name,
+                                                       cc.parent.get('tag') if 'tag' in cc.parent.attrs.keys() else None,
                                                        cc.text.strip()
                                                        ])
+                # and 'rulenode' in nexttag_c.parent.name
                 if nexttag_p:
                     for pp in nexttag_p:
+                        # print(pp.parent.name,pp.parent.get('tag'))
                         temp_list4.append([self.version,self.rinok, os.path.basename(path),
                                                        parentrole,
                                                        xx['id'] if 'id' in xx.attrs.keys() else None,
-                                                       pp.find().name.replace('formula:',''),
+                                                       pp.parent.name,
+                                                       pp.parent.get('tag') if 'tag' in pp.parent.attrs.keys() else None,
+                                                       pp.find().name.replace('formula:','') if pp.find().name else None,
                                                        pp.find()['start'] if 'start' in pp.find().attrs.keys() else pp.find()['value'] if 'value' in pp.find().attrs.keys() else None,
                                                        pp.find()['end'] if 'end' in pp.find().attrs.keys() else None
                                                        ])
+
         df_rulenodes=pd.DataFrame(data=temp_list1,columns=columns1)
         df_rulenodes_e=pd.DataFrame(data=temp_list2,columns=columns2)
         df_rulenodes_c=pd.DataFrame(data=temp_list3, columns=columns3)

@@ -35,6 +35,7 @@ class c_parseTab():
             with open(path_file,'rb') as f:
                 ff=f.read()
             soup=BeautifulSoup(ff,'lxml').contents[2].find_next(re.compile('.*schema$'))
+            self.df.parse_tableTags(soup,path_file,'ep_support')
             namesps=soup.find_all(re.compile('.*import$'))
             for xx in namesps:
                 if 'www.cbr.ru' in xx['namespace'] and f'{self.period}/tab' in xx['namespace']:
@@ -53,8 +54,8 @@ class c_parseTab():
                     path_file = path_supp + ep
                     with open(path_file, 'rb') as f:
                         ff = f.read()
-                        # print(path_file)
                     soup = BeautifulSoup(ff, 'lxml').contents[1].find_next(re.compile('.*schema$'))
+                    self.df.parse_tableTags(soup, path_file, 'ep')
                     namesps = soup.find_all(re.compile('.*import$'))
                     for xx in namesps:
                         if 'www.cbr.ru' in xx['namespace'] and f'{self.period}/tab' in xx['namespace']:
@@ -81,7 +82,7 @@ class c_parseTab():
         schema_temp_2=schema_temp.split('/')[-1]
         path_xsd=self.path_tax+tab_temp.replace('http://','')+schema_temp_2
         soup=self.df.parsetag(path_xsd,'schema')
-
+        self.df.parse_tableTags(soup,path_xsd,'table')
         self.df.parseRoletypes(soup.find_all(re.compile('.*roletype$')),path_xsd)
         self.df.parseLinkbaserefs(soup,path_xsd)
         self.df.parseTableParts(soup,path_xsd)
@@ -93,9 +94,8 @@ class c_parseTab():
 
         if formulas:
             for path in formulas:
-
                 soup_formula = self.df.parsetag(path,'linkbase')
-
+                self.df.parse_tableTags(soup_formula, path_xsd, 'formula')
                 def t0(): self.df.parse_generals(soup_formula.find_all_next(re.compile('.*generalvariable$')),path)
                 def t1(): self.df.parseRolerefs(soup_formula.find_all(re.compile('.*roleref$')),path,'formula')
                 def t2(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablearc$')),path,'formula')
@@ -153,10 +153,11 @@ class c_parseTab():
         gc.collect()
 
     def parsedef(self,path):
-        soup_pres=self.df.parsetag(path,'linkbase')
-        def t1():self.df.parseRolerefs(soup_pres.find_all(re.compile('.*roleref$')),path,'definition')
-        def t2():self.df.parseLocators(soup_pres.find_all(re.compile('.*loc$')),path,'definition')
-        def t3():self.df.parseArcs(soup_pres.find_all(re.compile('.*definitionarc$')),path,'definition')
+        soup_def=self.df.parsetag(path,'linkbase')
+        self.df.parse_tableTags(soup_def, path, 'definition_table')
+        def t1():self.df.parseRolerefs(soup_def.find_all(re.compile('.*roleref$')),path,'definition')
+        def t2():self.df.parseLocators(soup_def.find_all(re.compile('.*loc$')),path,'definition')
+        def t3():self.df.parseArcs(soup_def.find_all(re.compile('.*definitionarc$')),path,'definition')
         t_all=[t1,t2,t3]
         with ThreadPool(processes=3) as pool:
             pool.map(self.df.writeThread, t_all)
@@ -164,6 +165,7 @@ class c_parseTab():
 
     def parsepres(self,path):
         soup_pres=self.df.parsetag(path,'linkbase')
+        self.df.parse_tableTags(soup_pres, path, 'presentation_table')
         def t1():self.df.parseRolerefs(soup_pres.find_all(re.compile('.*roleref$')),path,'presentation')
         def t2():self.df.parseLocators(soup_pres.find_all(re.compile('.*loc$')),path,'presentation')
         def t3():self.df.parseArcs(soup_pres.find_all(re.compile('.*presentationarc$')),path,'presentation')
@@ -174,6 +176,7 @@ class c_parseTab():
 
     def parselab(self,path):
         soup = self.df.parsetag(path, 'linkbase')
+        self.df.parse_tableTags(soup, path, 'lab')
         def t1(): self.df.parseRolerefs(soup.find_all(re.compile('.*roleref$')),path,'lab')
         def t2(): self.df.parseLocators(soup.find_all(re.compile('.*loc$')),path,'lab')
         def t3(): self.df.parseLabels(soup.find_all(re.compile('.*label$')),path)
@@ -185,6 +188,7 @@ class c_parseTab():
 
     def parserend(self,path):
         soup = self.df.parsetag(path, 'linkbase')
+        self.df.parse_tableTags(soup, path, 'rend')
         def t1():self.df.parseRolerefs(soup.find_all(re.compile('.*roleref$')),path,'rend')
         def t2():self.df.parseTableschemas(soup.find_all(re.compile('.*table$')),path,'table')
         def t3():self.df.parseTableschemas(soup.find_all(re.compile('.*breakdown$')),path,'breakdown')
@@ -233,12 +237,13 @@ class c_parseTab():
                 'df_va_aspectcovers': self.df.concatDfs(self.df.df_va_aspectcovers_Dic),
                 'df_va_assertionsets': self.df.concatDfs(self.df.df_va_assertionset_Dic),
                 'df_preconditions': self.df.concatDfs(self.df.df_preconditions_Dic),
-                'df_messages': self.df.concatDfs(self.df.df_messages_Dic)
+                'df_messages': self.df.concatDfs(self.df.df_messages_Dic),
+                'df_tabletags': self.df.concatDfs(self.df.df_tabletags_Dic)
                 }
 
 if __name__ == "__main__":
-    ss=c_parseTab('final_6','bfo','bfo','2024-11-01')
-    tables=ss.startParse()
-    # ss.parsetab(['../tab/sr_0420250/sr_0420250.xsd', 'http://www.cbr.ru/xbrl/nso/npf/rep/2024-11-01/tab/sr_0420250'])
-    #ss.parsetab(['../tab/SR_0420312/SR_0420312.xsd', 'http://www.cbr.ru/xbrl/nso/purcb/rep/2023-03-31/tab/SR_0420312'])
+    ss=c_parseTab('final_6_5','npf','npf','2024-11-01')
+    # tables=ss.startParse()
+    #ss.parsetab(['../tab/sr_Sved_ObOtchOrg/sr_Sved_ObOtchOrg.xsd', 'http://www.cbr.ru/xbrl/nso/ins/rep/2024-11-01/tab/sr_Sved_ObOtchOrg'])
+    ss.parsetab(['../tab/sr_0420254/sr_0420254.xsd', 'http://www.cbr.ru/xbrl/nso/npf/rep/2024-11-01/tab/sr_0420254'])
     None

@@ -16,6 +16,7 @@ class c_parseIFRS_FULL():
 
     def parseDic(self):
         soup_dic = self.df.parsetag(self.path_dic, 'xsd:schema')
+        self.df.parse_tableTags(soup_dic, self.path_dic, 'dic')
         def t1(): self.df.parseElements(soup_dic.find_all_next('xsd:element'),self.path_dic)
         defs=[t1]
         with ThreadPool(processes=11) as pool:

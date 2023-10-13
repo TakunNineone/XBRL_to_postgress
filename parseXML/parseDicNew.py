@@ -48,10 +48,16 @@ class c_parseDic():
 
     def parseDic(self):
         soup_dic = self.df.parsetag(self.path_dic,'appinfo')
+        self.df.parse_tableTags(soup_dic, self.path_dic, 'dic')
         soup_label = self.df.parsetag(self.path_label, 'linkbase')
-        try: soup_def = self.df.parsetag(self.path_definition, 'linkbase')
+        self.df.parse_tableTags(soup_label, self.path_label, 'label')
+        try:
+            soup_def = self.df.parsetag(self.path_definition, 'linkbase')
+            self.df.parse_tableTags(soup_def, self.path_dic, 'definition_dic')
         except: soup_def = None
-        try: soup_pres=self.df.parsetag(self.path_pres,'linkbase')
+        try:
+            soup_pres=self.df.parsetag(self.path_pres,'linkbase')
+            self.df.parse_tableTags(soup_def, self.path_dic, 'presentation_dic')
         except: soup_pres = None
         def t1(): self.df.parseRoletypes(soup_dic.find_all(re.compile('.*roletype$')),self.path_dic)
         def t2(): self.df.parseElements(soup_dic.find_all_next(re.compile('.*element$')),self.path_dic)
@@ -82,10 +88,11 @@ class c_parseDic():
                 'df_locators':self.df.concatDfs(self.df.df_locators_Dic),
                 'df_arcs':self.df.concatDfs(self.df.df_arcs_Dic),
                 'df_labels':self.df.concatDfs(self.df.df_labels_Dic),
-                'df_rolerefs':self.df.concatDfs(self.df.df_rolerefs_Dic)}
+                'df_rolerefs':self.df.concatDfs(self.df.df_rolerefs_Dic),
+                'df_tabletags':self.df.concatDfs(self.df.df_tabletags_Dic)}
 
 if __name__ == "__main__":
-    ss=c_parseDic('final_5_2','bfo\\dict','dictionary')
+    ss=c_parseDic('final_6_5','kra','kra')
     dfs=ss.startParse()
 
     None
