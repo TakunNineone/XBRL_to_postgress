@@ -242,8 +242,8 @@ class c_parseTab():
                 }
 
 if __name__ == "__main__":
-    ss=c_parseTab('final_6_5','npf','npf','2024-11-01')
-    # tables=ss.startParse()
+    ss=c_parseTab('final_5_2','bfo','bfo','2023-03-31')
+    tables=ss.startParse()
     #ss.parsetab(['../tab/sr_Sved_ObOtchOrg/sr_Sved_ObOtchOrg.xsd', 'http://www.cbr.ru/xbrl/nso/ins/rep/2024-11-01/tab/sr_Sved_ObOtchOrg'])
-    ss.parsetab(['../tab/sr_0420254/sr_0420254.xsd', 'http://www.cbr.ru/xbrl/nso/npf/rep/2024-11-01/tab/sr_0420254'])
+    #ss.parsetab(['../tab/sr_0420254/sr_0420254.xsd', 'http://www.cbr.ru/xbrl/nso/npf/rep/2024-11-01/tab/sr_0420254'])
     None
