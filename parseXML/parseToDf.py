@@ -1,7 +1,7 @@
 import gc
 import re
 
-import  pandas as pd
+import pandas as pd
 import os
 from bs4 import BeautifulSoup
 from multiprocessing.pool import ThreadPool
@@ -50,7 +50,7 @@ class c_parseToDf():
         temp_list.append([self.version,self.rinok,os.path.basename(path),tags,tags_from])
         df_tableTags=pd.DataFrame(data=temp_list,columns=columns)
         self.df_tabletags_Dic.append(df_tableTags)
-        del temp_list,df_tableTags
+        #del temp_list,df_tableTags
 
     def parse_precond(self,soup,path):
         temp_list = []
@@ -68,7 +68,7 @@ class c_parseToDf():
                                     ])
         df_preconditions=pd.DataFrame(data=temp_list,columns=columns)
         self.df_preconditions_Dic.append(df_preconditions)
-        del df_preconditions,temp_list
+        #del df_preconditions,temp_list
 
     def parse_messages(self,soup,path):
         temp_list = []
@@ -88,7 +88,7 @@ class c_parseToDf():
                               ])
         df_messages = pd.DataFrame(data=temp_list, columns=columns)
         self.df_messages_Dic.append(df_messages)
-        del df_messages, temp_list
+        #del df_messages, temp_list
 
     def parse_assertions(self,soup,path,tag):
         # print(f'parse_assertions - {path}')
@@ -111,7 +111,7 @@ class c_parseToDf():
                                     ])
         df_va_assertions=pd.DataFrame(data=temp_list,columns=columns)
         self.df_va_assertions_Dic.append(df_va_assertions)
-        del df_va_assertions
+        #del df_va_assertions
 
     def parse_assertionset(self,soup,path):
         # print(f'parse_concepts - {path}')
@@ -128,7 +128,7 @@ class c_parseToDf():
                                         ])
         df_va_assertionset=pd.DataFrame(data=temp_list,columns=columns)
         self.df_va_assertionset_Dic.append(df_va_assertionset)
-        del df_va_assertionset,temp_list
+        #del df_va_assertionset,temp_list
 
     def parse_aspectcovers(self,soup,path):
         # print(f'parse_aspectcovers - {path}')
@@ -150,7 +150,7 @@ class c_parseToDf():
                                       ])
         df_va_aspectcovers=pd.DataFrame(data=temp_list,columns=columns)
         self.df_va_aspectcovers_Dic.append(df_va_aspectcovers)
-        del df_va_aspectcovers,temp_list
+        #del df_va_aspectcovers,temp_list
 
     def parse_generals(self,soup,path):
         # print(f'parse_generals - {path}')
@@ -167,7 +167,7 @@ class c_parseToDf():
                                         ])
         df_va_generals=pd.DataFrame(data=temp_list,columns=columns)
         self.df_va_generals_Dic.append(df_va_generals)
-        del df_va_generals,temp_list
+        #del df_va_generals,temp_list
 
     def parse_factvars(self,soup,path):
         # print(f'parse_factvars - {path}')
@@ -186,7 +186,7 @@ class c_parseToDf():
                                         ])
         df_va_factvars=pd.DataFrame(data=temp_list,columns=columns)
         self.df_va_factvars_Dic.append(df_va_factvars)
-        del df_va_factvars,temp_list
+        #del df_va_factvars,temp_list
 
     def parse_concepts(self,soup,path):
         # print(f'parse_concepts - {path}')
@@ -204,7 +204,7 @@ class c_parseToDf():
                                         ])
         df_va_concepts=pd.DataFrame(data=temp_list,columns=columns)
         self.df_va_concepts_Dic.append(df_va_concepts)
-        del df_va_concepts,temp_list
+        #del df_va_concepts,temp_list
 
     def parse_tdimensions(self,soup,path):
         # print(f'parse_tdimensions - {path}')
@@ -222,7 +222,7 @@ class c_parseToDf():
                                         ])
         df_va_tdimensions = pd.DataFrame(data=temp_list,columns=columns)
         self.df_va_tdimensions_Dic.append(df_va_tdimensions)
-        del df_va_tdimensions,temp_list
+        #del df_va_tdimensions,temp_list
 
     def generator_(self,iterable):
         iterator = iter(iterable)
@@ -255,7 +255,7 @@ class c_parseToDf():
         df_va_edmembers=pd.DataFrame(data=temp_list2,columns=columns2)
         self.df_va_edmembers_Dic.append(df_va_edmembers)
         self.df_va_edimensions_Dic.append(df_va_edimensions)
-        del df_va_edmembers,df_va_edimensions,temp_list1,temp_list2
+        #del df_va_edmembers,df_va_edimensions,temp_list1,temp_list2
 
 
     def generator_2(self,iterable):
@@ -290,7 +290,7 @@ class c_parseToDf():
                               ])
         df_rend_conceptrelnodes=pd.DataFrame(data=temp_list,columns=columns)
         self.df_rend_conceptrelnodes_Dic.append(df_rend_conceptrelnodes)
-        del df_rend_conceptrelnodes,temp_list
+        #del df_rend_conceptrelnodes,temp_list
 
     def parse_edimensions_rend(self,soup,path):
         # print(f'parse_edimensions - {path}')
@@ -312,7 +312,7 @@ class c_parseToDf():
         df_rend_edmembers=pd.DataFrame(data=temp_list2,columns=columns2)
         self.df_rend_edmembers_Dic.append(df_rend_edmembers)
         self.df_rend_edimensions_Dic.append(df_rend_edimensions)
-        del df_rend_edmembers,df_rend_edimensions,temp_list1,temp_list2
+        #del df_rend_edmembers,df_rend_edimensions,temp_list1,temp_list2
 
     # def parseVA(self,path):
     #     df_va_covers = pd.DataFrame(columns=['rinok', 'entity', 'parentrole','type', 'label', 'title', 'id','values'])
@@ -342,7 +342,8 @@ class c_parseToDf():
                                         ])
         df_aspectnodes = pd.DataFrame(data=temp_list, columns=columns)
         self.appendDfs_Dic(self.df_aspectnodes_Dic, df_aspectnodes)
-        del df_aspectnodes, temp_list
+        #del df_aspectnodes, temp_list
+
 
     def parseRulenodes(self,path):
         # try:
@@ -413,7 +414,7 @@ class c_parseToDf():
         self.appendDfs_Dic(self.df_rulenodes_c_Dic, df_rulenodes_c)
         self.appendDfs_Dic(self.df_rulenodes_p_Dic, df_rulenodes_p)
         self.appendDfs_Dic(self.df_rulenodes_e_Dic, df_rulenodes_e)
-        del df_rulenodes_e,df_rulenodes_p,df_rulenodes_c,df_rulenodes,temp_list1,temp_list2,temp_list3,temp_list4
+        #del df_rulenodes_e,df_rulenodes_p,df_rulenodes_c,df_rulenodes,temp_list1,temp_list2,temp_list3,temp_list4
 
     def generator_rulesets(self, iterable):
         iterator = iter(iterable)
@@ -441,7 +442,7 @@ class c_parseToDf():
             temp_list.append([self.version,self.rinok,os.path.basename(path),parentrole,rulenode_id,tag,period_instant,period_start,period_end,concept,dimension,member])
         df_rulesets=pd.DataFrame(data=temp_list,columns=columns)
         self.appendDfs_Dic(self.df_rulesets_Dic,df_rulesets)
-        del temp_list,df_rulesets
+        #del temp_list,df_rulesets
 
     def parseElements(self,dict_with_lbrfs, full_file_path):
         #print(f'Elements - {full_file_path}')
@@ -501,7 +502,7 @@ class c_parseToDf():
                 ])
         df_elements=pd.DataFrame(data=temp_list,columns=columns)
         self.appendDfs_Dic(self.df_elements_Dic, df_elements)
-        del df_elements,temp_list
+        #del df_elements,temp_list
 
     def parseTableParts(self, soup, full_file_path):
         # print(f'Linkbaserefs - {full_file_path}')
@@ -521,7 +522,7 @@ class c_parseToDf():
                                   i])
         df_tableparts = pd.DataFrame(data=temp_list, columns=columns)
         self.appendDfs_Dic(self.df_tableparts_Dic, df_tableparts)
-        del df_tableparts, temp_list
+        #del df_tableparts, temp_list
 
     def parseLinkbaserefs(self, soup, full_file_path):
         #print(f'Linkbaserefs - {full_file_path}')
@@ -537,7 +538,7 @@ class c_parseToDf():
                                            ])
         df_linkbaserefs=pd.DataFrame(data=temp_list,columns=columns)
         self.appendDfs_Dic(self.df_linkbaserefs_Dic, df_linkbaserefs)
-        del df_linkbaserefs,temp_list
+        #del df_linkbaserefs,temp_list
 
     def parseRoletypes(self,dict_with_rltps,full_file_path):
         #print(f'Roletypes - {full_file_path}')
@@ -556,7 +557,7 @@ class c_parseToDf():
                                             1 if 'gen:link' in usedon else 0])
         df_roletypes=pd.DataFrame(data=temp_list,columns=columns)
         self.appendDfs_Dic(self.df_roletypes_Dic, df_roletypes)
-        del df_roletypes,temp_list
+        #del df_roletypes,temp_list
 
     def parseLabels(self,dict_with_lbls,full_file_path):
         #print(f'Labels - {full_file_path}')
@@ -578,7 +579,7 @@ class c_parseToDf():
                 ])
         df_labels=pd.DataFrame(data=temp_list,columns=columns)
         self.appendDfs_Dic(self.df_labels_Dic, df_labels)
-        del df_labels,temp_list
+        #del df_labels,temp_list
 
     def parseLocators(self,dict_with_loc,full_file_path,tag):
         temp_list=[]
@@ -596,7 +597,7 @@ class c_parseToDf():
                     xx['xlink:title'] if 'xlink:title' in xx.attrs.keys() else None])
         df_locators=pd.DataFrame(data=temp_list,columns=columns)
         self.appendDfs_Dic(self.df_locators_Dic, df_locators)
-        del df_locators,temp_list
+        #del df_locators,temp_list
 
     def parseRolerefs(self,dict_with_rlrfs,full_file_path,tag):
         #print(f'Rolerefs - {full_file_path}')
@@ -611,7 +612,7 @@ class c_parseToDf():
                                            ])
         df_rolerefs=pd.DataFrame(data=temp_list,columns=columns)
         self.appendDfs_Dic(self.df_rolerefs_Dic, df_rolerefs)
-        del df_rolerefs,temp_list
+       # del df_rolerefs,temp_list
 
     def parseTableschemas(self,dict_with_tsch,full_file_path,tag):
         #print(f'Tableschemas - {full_file_path}')
@@ -629,7 +630,7 @@ class c_parseToDf():
                                            ])
         df_tableschemas=pd.DataFrame(data=temp_list,columns=columns)
         self.appendDfs_Dic(self.df_tableschemas_Dic, df_tableschemas)
-        del df_tableschemas,temp_list
+       # del df_tableschemas,temp_list
 
     def parseArcs(self,dict_with_arcs,full_file_path,tag):
         # print(f'Arcs - {full_file_path}')
@@ -664,7 +665,7 @@ class c_parseToDf():
                 ])
         df_arcs=pd.DataFrame(data = temp_list, columns = columns)
         self.appendDfs_Dic(self.df_arcs_Dic, df_arcs)
-        del temp_list
+        #del temp_list,df_arcs
 
     def concatDfs(self,dfs):
         try: ret=pd.concat(dfs).reset_index(drop=True)
@@ -674,7 +675,13 @@ class c_parseToDf():
     def writeThread(self, func):
         func()
 
+
     def appendDfs_Dic(self,df,df_to_append):
+            try:
+                df.append(df_to_append)
+            except: None
+
+    def appendDfs_Dic_old(self,df,df_to_append):
         append=True
         while append:
             try:

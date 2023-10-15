@@ -1,14 +1,12 @@
-import gc
+import gc, datetime
 import os,re
-
-import pandas as pd
 from bs4 import BeautifulSoup
 import warnings
-import parseToDf
+from parseXML import parseToDf
 warnings.filterwarnings("ignore")
-from multiprocessing.pool import ThreadPool
 
 class c_parseTab():
+
     def __init__(self,taxonomy,rinok_folder,rinok,period):
         if rinok_folder=='bfo':
             self.rinok = 'bfo'
@@ -69,139 +67,109 @@ class c_parseTab():
 
     def parsetabThread(self):
         tabs=[[row['schemalocation'],row['namespace']] for index, row in self.df.df_tables.iterrows()]
-
         if tabs:
-            with ThreadPool(processes=60) as pool:
-                pool.map(self.parsetab, tabs)
+            self.parsetab(tabs)
 
-    def parsetab(self,schemalocationnamespace):
-        # print(schemalocationnamespace)
 
-        tab_temp=f"{schemalocationnamespace[1]}\\"
-        schema_temp=schemalocationnamespace[0]
-        schema_temp_2=schema_temp.split('/')[-1]
-        path_xsd=self.path_tax+tab_temp.replace('http://','')+schema_temp_2
-        soup=self.df.parsetag(path_xsd,'schema')
-        self.df.parse_tableTags(soup,path_xsd,'table')
-        self.df.parseRoletypes(soup.find_all(re.compile('.*roletype$')),path_xsd)
-        self.df.parseLinkbaserefs(soup,path_xsd)
-        self.df.parseTableParts(soup,path_xsd)
-        gc.collect()
+    def parsetab(self,xx):
+        for i,schemalocationnamespace in enumerate(xx):
 
-        linkbaserefs = soup.find_all(re.compile('.*linkbaseref$'))
-        formulas = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
-                re.findall(r'formula\S*.xml', yy['xlink:href'])]
+            tab_temp=f"{schemalocationnamespace[1]}\\"
+            schema_temp=schemalocationnamespace[0]
+            schema_temp_2=schema_temp.split('/')[-1]
+            path_xsd=self.path_tax+tab_temp.replace('http://','')+schema_temp_2
+            soup=self.df.parsetag(path_xsd,'schema')
+            self.df.parse_tableTags(soup,path_xsd,'table')
+            self.df.parseRoletypes(soup.find_all(re.compile('.*roletype$')),path_xsd)
+            self.df.parseLinkbaserefs(soup,path_xsd)
+            self.df.parseTableParts(soup,path_xsd)
 
-        if formulas:
-            for path in formulas:
-                soup_formula = self.df.parsetag(path,'linkbase')
-                self.df.parse_tableTags(soup_formula, path_xsd, 'formula')
-                def t0(): self.df.parse_generals(soup_formula.find_all_next(re.compile('.*generalvariable$')),path)
-                def t1(): self.df.parseRolerefs(soup_formula.find_all(re.compile('.*roleref$')),path,'formula')
-                def t2(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablearc$')),path,'formula')
-                def t3(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablefilterarc$')), path, 'formula')
-                def t3_2(): self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablesetfilterarc$')), path, 'formula')
-                def t4(): self.df.parseArcs(soup_formula.find_all_next(re.compile(r'^.{0,4}arc$')), path, 'formula')
-                def t5(): self.df.parseLocators(soup_formula.find_all_next(re.compile(r'^.{0,5}loc$')),path,'formula')
-                def t6(): self.df.parseLabels(soup_formula.find_all_next(re.compile('.*message$')),path)
-                def t7(): self.df.parse_assertions(soup_formula.find_all_next(re.compile('.*valueassertion$')),path,'valueassertion'),
-                def t7_2(): self.df.parse_assertions(soup_formula.find_all_next(re.compile('.*existenceassertion$')), path, 'existenceassertion')
-                def t8(): self.df.parse_concepts(soup_formula,path)
-                def t9(): self.df.parse_factvars(soup_formula,path)
-                def t10(): self.df.parse_tdimensions(soup_formula,path)
-                def t11(): self.df.parse_edimensions(soup_formula,path)
-                def t12(): self.df.parse_aspectcovers(soup_formula.find_all_next(re.compile('.*aspectcover$')),path)
-                def t13(): self.df.parse_assertionset(soup_formula,path)
-                def t14(): self.df.parse_precond(soup_formula,path)
-                def t15(): self.df.parse_messages(soup_formula,path)
-                t_all=[t0,t1,t2,t3,t3_2,t4,t5,t6,t7,t7_2,t8,t9,t10,t11,t12,t13,t14,t15]
 
-                with ThreadPool(processes=18) as pool:
-                   pool.map(self.df.writeThread, t_all)
-        gc.collect()
+            linkbaserefs = soup.find_all(re.compile('.*linkbaseref$'))
+            formulas = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
+                    re.findall(r'formula\S*.xml', yy['xlink:href'])]
+            if formulas:
+                for path in formulas:
+                    soup_formula = self.df.parsetag(path,'linkbase')
+                    self.df.parse_tableTags(soup_formula, path_xsd, 'formula')
+                    self.df.parse_generals(soup_formula.find_all_next(re.compile('.*generalvariable$')),path)
+                    self.df.parseRolerefs(soup_formula.find_all(re.compile('.*roleref$')),path,'formula')
+                    self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablearc$')),path,'formula')
+                    self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablefilterarc$')), path, 'formula')
+                    self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablesetfilterarc$')), path, 'formula')
+                    self.df.parseArcs(soup_formula.find_all_next(re.compile(r'^.{0,4}arc$')), path, 'formula')
+                    self.df.parseLocators(soup_formula.find_all_next(re.compile(r'^.{0,5}loc$')),path,'formula')
+                    self.df.parseLabels(soup_formula.find_all_next(re.compile('.*message$')),path)
+                    self.df.parse_assertions(soup_formula.find_all_next(re.compile('.*valueassertion$')),path,'valueassertion'),
+                    self.df.parse_assertions(soup_formula.find_all_next(re.compile('.*existenceassertion$')), path, 'existenceassertion')
+                    self.df.parse_concepts(soup_formula,path)
+                    self.df.parse_factvars(soup_formula,path)
+                    self.df.parse_tdimensions(soup_formula,path)
+                    self.df.parse_edimensions(soup_formula,path)
+                    self.df.parse_aspectcovers(soup_formula.find_all_next(re.compile('.*aspectcover$')),path)
+                    self.df.parse_assertionset(soup_formula,path)
+                    self.df.parse_precond(soup_formula,path)
+                    self.df.parse_messages(soup_formula,path)
+            rend = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
+                    re.findall(r'rend\S*.xml',yy['xlink:href'])]
+            [self.parserends(r) for r in rend if rend]
+            pres = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
+                    re.findall(r'presentation\S*.xml',yy['xlink:href'])]
+            [self.parsepres(p) for p in pres if pres]
+            defin = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
+                     re.findall(r'definition\S*.xml',yy['xlink:href'])]
+            [self.parsedef(d) for d in defin if defin]
+            lab = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
+                   re.findall(r'lab\S*.xml',yy['xlink:href'])]
+            [self.parselab(l) for l in lab if lab]
+            gc.collect()
+            print(schemalocationnamespace)
 
-        rend = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
-                re.findall(r'rend\S*.xml',yy['xlink:href'])]
-        if rend:
-            with ThreadPool(processes=10) as pool:
-                pool.map(self.df.parseRulenodes,rend)
-            with ThreadPool(processes=10) as pool:
-                pool.map(self.df.parseRulesets,rend)
-            with ThreadPool(processes=10) as pool:
-                pool.map(self.df.parseAspectnodes,rend)
-            with ThreadPool(processes=10) as pool:
-                pool.map(self.parserend, rend)
-        gc.collect()
-
-        pres = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if re.findall(r'presentation\S*.xml',yy['xlink:href'])]
-        if pres:
-            with ThreadPool(processes=len(pres)) as pool:
-                pool.map(self.parsepres, pres)
-        gc.collect()
-
-        defin = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if re.findall(r'definition\S*.xml',yy['xlink:href'])]
-        if defin:
-            with ThreadPool(processes=len(defin)) as pool:
-                pool.map(self.parsedef, defin)
-        gc.collect()
-
-        lab = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
-               re.findall(r'lab\S*.xml',yy['xlink:href'])]
-        if lab:
-            with ThreadPool(processes=20) as pool:
-                pool.map(self.parselab, lab)
-        gc.collect()
+    def parserends(self,rend):
+        self.df.parseRulenodes(rend)
+        self.df.parseRulesets(rend)
+        self.df.parseAspectnodes(rend)
+        self.parserend(rend)
 
     def parsedef(self,path):
         soup_def=self.df.parsetag(path,'linkbase')
         self.df.parse_tableTags(soup_def, path, 'definition_table')
-        def t1():self.df.parseRolerefs(soup_def.find_all(re.compile('.*roleref$')),path,'definition')
-        def t2():self.df.parseLocators(soup_def.find_all(re.compile('.*loc$')),path,'definition')
-        def t3():self.df.parseArcs(soup_def.find_all(re.compile('.*definitionarc$')),path,'definition')
-        t_all=[t1,t2,t3]
-        with ThreadPool(processes=3) as pool:
-            pool.map(self.df.writeThread, t_all)
-        gc.collect()
+        self.df.parseRolerefs(soup_def.find_all(re.compile('.*roleref$')),path,'definition')
+        self.df.parseLocators(soup_def.find_all(re.compile('.*loc$')),path,'definition')
+        self.df.parseArcs(soup_def.find_all(re.compile('.*definitionarc$')),path,'definition')
+        # t_all=[t1,t2,t3]
+        # for t in t_all:
+        #     self.df.writeThread(t)
 
     def parsepres(self,path):
         soup_pres=self.df.parsetag(path,'linkbase')
         self.df.parse_tableTags(soup_pres, path, 'presentation_table')
-        def t1():self.df.parseRolerefs(soup_pres.find_all(re.compile('.*roleref$')),path,'presentation')
-        def t2():self.df.parseLocators(soup_pres.find_all(re.compile('.*loc$')),path,'presentation')
-        def t3():self.df.parseArcs(soup_pres.find_all(re.compile('.*presentationarc$')),path,'presentation')
-        t_all=[t1,t2,t3]
-        with ThreadPool(processes=3) as pool:
-            pool.map(self.df.writeThread, t_all)
-        gc.collect()
+        self.df.parseRolerefs(soup_pres.find_all(re.compile('.*roleref$')),path,'presentation')
+        self.df.parseLocators(soup_pres.find_all(re.compile('.*loc$')),path,'presentation')
+        self.df.parseArcs(soup_pres.find_all(re.compile('.*presentationarc$')),path,'presentation')
 
     def parselab(self,path):
         soup = self.df.parsetag(path, 'linkbase')
         self.df.parse_tableTags(soup, path, 'lab')
-        def t1(): self.df.parseRolerefs(soup.find_all(re.compile('.*roleref$')),path,'lab')
-        def t2(): self.df.parseLocators(soup.find_all(re.compile('.*loc$')),path,'lab')
-        def t3(): self.df.parseLabels(soup.find_all(re.compile('.*label$')),path)
-        def t4(): self.df.parseArcs(soup.find_all(re.compile('.*arc$')),path,'gen:arc')
-        t_all=[t1, t2, t3, t4]
-        with ThreadPool(processes=4) as pool:
-            pool.map(self.df.writeThread, t_all)
-        gc.collect()
+        self.df.parseRolerefs(soup.find_all(re.compile('.*roleref$')),path,'lab')
+        self.df.parseLocators(soup.find_all(re.compile('.*loc$')),path,'lab')
+        self.df.parseLabels(soup.find_all(re.compile('.*label$')),path)
+        self.df.parseArcs(soup.find_all(re.compile('.*arc$')),path,'gen:arc')
+
 
     def parserend(self,path):
         soup = self.df.parsetag(path, 'linkbase')
         self.df.parse_tableTags(soup, path, 'rend')
-        def t1():self.df.parseRolerefs(soup.find_all(re.compile('.*roleref$')),path,'rend')
-        def t2():self.df.parseTableschemas(soup.find_all(re.compile('.*table$')),path,'table')
-        def t3():self.df.parseTableschemas(soup.find_all(re.compile('.*breakdown$')),path,'breakdown')
-        def t4():self.df.parseArcs(soup.find_all(re.compile('.*tablebreakdownarc$')),path,'table:tablebreakdownarc')
-        def t5():self.df.parseArcs(soup.find_all_next(re.compile('.*definitionnodesubtreearc$')),path,'table:definitionnodesubtreearc')
-        def t6():self.df.parseArcs(soup.find_all_next(re.compile('.*aspectnodefilterarc$')), path,'table:aspectnodefilterarc')
-        def t7():self.df.parseArcs(soup.find_all_next(re.compile('.*breakdowntreearc$')), path, 'table:breakdowntreearc')
-        def t8():self.df.parse_edimensions_rend(soup,path)
-        def t9():self.df.parseConceptRelationshipNode(soup,path)
-        t_all = [t1, t2, t3, t4, t5, t6, t7, t8,t9]
-        with ThreadPool(processes=9) as pool:
-            pool.map(self.df.writeThread, t_all)
-        gc.collect()
+        self.df.parseRolerefs(soup.find_all(re.compile('.*roleref$')),path,'rend')
+        self.df.parseTableschemas(soup.find_all(re.compile('.*table$')),path,'table')
+        self.df.parseTableschemas(soup.find_all(re.compile('.*breakdown$')),path,'breakdown')
+        self.df.parseArcs(soup.find_all(re.compile('.*tablebreakdownarc$')),path,'table:tablebreakdownarc')
+        self.df.parseArcs(soup.find_all_next(re.compile('.*definitionnodesubtreearc$')),path,'table:definitionnodesubtreearc')
+        self.df.parseArcs(soup.find_all_next(re.compile('.*aspectnodefilterarc$')), path,'table:aspectnodefilterarc')
+        self.df.parseArcs(soup.find_all_next(re.compile('.*breakdowntreearc$')), path, 'table:breakdowntreearc')
+        self.df.parse_edimensions_rend(soup,path)
+        self.df.parseConceptRelationshipNode(soup,path)
+
 
     def startParse(self):
         self.parsesupport()
@@ -243,7 +211,9 @@ class c_parseTab():
 
 if __name__ == "__main__":
     ss=c_parseTab('final_5_2','bfo','bfo','2023-03-31')
+    print(datetime.datetime.now())
     tables=ss.startParse()
+    print(datetime.datetime.now())
     #ss.parsetab(['../tab/sr_Sved_ObOtchOrg/sr_Sved_ObOtchOrg.xsd', 'http://www.cbr.ru/xbrl/nso/ins/rep/2024-11-01/tab/sr_Sved_ObOtchOrg'])
     #ss.parsetab(['../tab/sr_0420254/sr_0420254.xsd', 'http://www.cbr.ru/xbrl/nso/npf/rep/2024-11-01/tab/sr_0420254'])
     None
