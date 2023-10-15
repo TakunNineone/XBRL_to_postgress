@@ -1,0 +1,11 @@
+# Created by .ignore support plugin (hsz.mobi)
+.venv
+.idea/.gitignore
+.idea/XBRL_to_postgress.iml
+.idea/inspectionProfiles/
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+parseXML/__pycache__/
+parseXML/final_5_2/
+venv/
