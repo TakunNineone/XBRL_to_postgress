@@ -72,6 +72,7 @@ class c_parseTab():
 
 
     def parsetab(self,xx):
+        start = datetime.datetime.now()
         for i,schemalocationnamespace in enumerate(xx):
 
             tab_temp=f"{schemalocationnamespace[1]}\\"
@@ -123,7 +124,9 @@ class c_parseTab():
                    re.findall(r'lab\S*.xml',yy['xlink:href'])]
             [self.parselab(l) for l in lab if lab]
             gc.collect()
-            print(schemalocationnamespace)
+            finish = datetime.datetime.now()
+            print("", end=f"\rPercentComplete: {round((i+1)/len(xx)*100,2)}%, time: {finish - start}")
+
 
     def parserends(self,rend):
         self.df.parseRulenodes(rend)
@@ -213,7 +216,7 @@ if __name__ == "__main__":
     ss=c_parseTab('final_5_2','bfo','bfo','2023-03-31')
     print(datetime.datetime.now())
     tables=ss.startParse()
-    print(datetime.datetime.now())
+    print('\n',datetime.datetime.now())
     #ss.parsetab(['../tab/sr_Sved_ObOtchOrg/sr_Sved_ObOtchOrg.xsd', 'http://www.cbr.ru/xbrl/nso/ins/rep/2024-11-01/tab/sr_Sved_ObOtchOrg'])
     #ss.parsetab(['../tab/sr_0420254/sr_0420254.xsd', 'http://www.cbr.ru/xbrl/nso/npf/rep/2024-11-01/tab/sr_0420254'])
     None
