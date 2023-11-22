@@ -5,7 +5,7 @@ import psycopg2
 from sqlalchemy import create_engine
 
 print('begin', datetime.datetime.now())
-conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/final_5_2'
+conn_string = 'postgresql+psycopg2://postgres:124kosm21@127.0.0.1/final_5_3_2'
 
 db = create_engine(conn_string)
 conn = db.connect()
@@ -13,12 +13,12 @@ conn1 = psycopg2.connect(user="postgres",
                          password="124kosm21",
                          host="127.0.0.1",
                          port="5432",
-                         database="final_5_2")
+                         database="final_5_3_2")
 print(conn)
 print(conn1)
 
-version = 'final_5_2'
-period = '2023-03-31'
+version = 'final_5_3'
+period = '2024-11-01'
 
 # conn1.autocommit = True
 cursor = conn1.cursor()
@@ -28,14 +28,14 @@ delete from arcs;
 delete from aspectnodes;
 delete from catalog;
 delete from elements;
-delete from elements_labels;
+--delete from elements_labels;
 delete from entrypoints;
 delete from labels;
 delete from linkbaserefs;
 delete from locators;
 delete from messages;
 delete from preconditions;
-delete from preferred_labels;
+--delete from preferred_labels;
 delete from rend_edimensions;
 delete from rend_edmembers;
 delete from rolerefs;
@@ -120,20 +120,21 @@ BEGIN
     -- Разбиваем элементы arr2 на подмассивы
     FOREACH subarr IN ARRAY arr2
     LOOP
-        subarrays := subarrays || string_to_array(subarr, ';');
+        subarrays := subarrays ||  array( select split_part(x,'#',1) from unnest(string_to_array(subarr, ';')) as x )  ;
     END LOOP;
 
     -- Убираем дубликаты и пустые строки
     subarrays := array_remove(subarrays, NULL);
     subarrays := array_remove(subarrays, '');
+	--RAISE NOTICE 'Notice message  %', subarrays;
 
     -- Находим элементы для сравнения (которые есть в arr1 и в subarrays)
     SELECT array_agg(DISTINCT elem)
     INTO compare_elements
     FROM unnest(arr1) AS elem
-    WHERE elem = ANY(subarrays);
+    WHERE split_part(elem,'#',1) = ANY(subarrays);
 	if compare_elements is null then
-	return 0;
+		return 0;
 	end if;
 
   	FOREACH subarr IN ARRAY arr2
@@ -359,6 +360,122 @@ create index messages_entity on messages (entity);
 create index messages_parentrole on messages (parentrole);
 create index messages_rinok on messages (rinok);
 """
+sql_indexes_new= """
+create index elements_v  on elements (to_tsvector('english'::regconfig,version));
+create index labels_v  on labels (to_tsvector('english'::regconfig,version));
+create index linkbaserefs_v  on linkbaserefs (to_tsvector('english'::regconfig,version));
+create index locators_v  on locators (to_tsvector('english'::regconfig,version));
+create index rolerefs_v  on rolerefs (to_tsvector('english'::regconfig,version));
+create index roletypes_v  on roletypes (to_tsvector('english'::regconfig,version));
+create index rulenodes_v  on rulenodes (to_tsvector('english'::regconfig,version));
+create index rulenodes_c_v  on rulenodes_c (to_tsvector('english'::regconfig,version));
+create index rulenodes_e_v  on rulenodes_e (to_tsvector('english'::regconfig,version));
+create index rulenodes_p_v  on rulenodes_p (to_tsvector('english'::regconfig,version));
+create index tables_v  on tables (to_tsvector('english'::regconfig,version));
+create index tableschemas_v  on tableschemas (to_tsvector('english'::regconfig,version));
+create index va_assertions_v  on va_assertions (to_tsvector('english'::regconfig,version));
+create index va_concepts_v  on va_concepts (to_tsvector('english'::regconfig,version));
+create index va_edimensions_v  on va_edimensions (to_tsvector('english'::regconfig,version));
+create index va_edmembers_v  on va_edmembers (to_tsvector('english'::regconfig,version));
+create index va_factvars_v  on va_factvars (to_tsvector('english'::regconfig,version));
+create index va_tdimensions_v  on va_tdimensions (to_tsvector('english'::regconfig,version));
+create index va_generals_v  on va_generals (to_tsvector('english'::regconfig,version));
+create index tableparts_v  on tableparts (to_tsvector('english'::regconfig,version));
+create index va_aspectcovers_v  on va_aspectcovers (to_tsvector('english'::regconfig,version));
+create index va_assertionsets_v  on va_assertionsets (to_tsvector('english'::regconfig,version));
+create index aspectnodes_v  on aspectnodes (to_tsvector('english'::regconfig,version));
+create index entrypoints_v on entrypoints (to_tsvector('english'::regconfig,version));
+create index rend_edimensions_v  on rend_edimensions (to_tsvector('english'::regconfig,version));
+create index rend_edmembers_v  on rend_edmembers (to_tsvector('english'::regconfig,version));
+create index rulesets_v  on rulesets (to_tsvector('english'::regconfig,version));
+create index catalog_v  on catalog (to_tsvector('english'::regconfig,version));
+create index taxpackage_v  on taxpackage (to_tsvector('english'::regconfig,version));
+
+create index elements_entity  on elements (to_tsvector('english'::regconfig,entity));
+create index labels_entity  on labels (to_tsvector('english'::regconfig,entity));
+create index linkbaserefs_entity  on linkbaserefs (to_tsvector('english'::regconfig,entity));
+create index locators_entity  on locators (to_tsvector('english'::regconfig,entity));
+create index rolerefs_entity  on rolerefs (to_tsvector('english'::regconfig,entity));
+create index roletypes_entity  on roletypes (to_tsvector('english'::regconfig,entity));
+create index rulenodes_entity  on rulenodes (to_tsvector('english'::regconfig,entity));
+create index rulenodes_c_entity  on rulenodes_c (to_tsvector('english'::regconfig,entity));
+create index rulenodes_e_entity  on rulenodes_e (to_tsvector('english'::regconfig,entity));
+create index rulenodes_p_entity  on rulenodes_p (to_tsvector('english'::regconfig,entity));
+create index tables_entity  on tables (to_tsvector('english'::regconfig,entity));
+create index tableschemas_entity  on tableschemas (to_tsvector('english'::regconfig,entity));
+create index va_assertions_entity  on va_assertions (to_tsvector('english'::regconfig,entity));
+create index va_concepts_entity  on va_concepts (to_tsvector('english'::regconfig,entity));
+create index va_edimensions_entity  on va_edimensions (to_tsvector('english'::regconfig,entity));
+create index va_edmembers_entity  on va_edmembers (to_tsvector('english'::regconfig,entity));
+create index va_factvars_entity  on va_factvars (to_tsvector('english'::regconfig,entity));
+create index va_tdimensions_entity  on va_tdimensions (to_tsvector('english'::regconfig,entity));
+create index va_generals_entity  on va_generals (to_tsvector('english'::regconfig,entity));
+create index tableparts_entity  on tableparts (to_tsvector('english'::regconfig,entity));
+create index va_aspectcovers_entity  on va_aspectcovers (to_tsvector('english'::regconfig,entity));
+create index va_assertionsets_entity  on va_assertionsets (to_tsvector('english'::regconfig,entity));
+create index aspectnodes_entity  on aspectnodes (to_tsvector('english'::regconfig,entity));
+create index rend_edimensions_entity  on rend_edimensions (to_tsvector('english'::regconfig,entity));
+create index rend_edmembers_entity  on rend_edmembers (to_tsvector('english'::regconfig,entity));
+create index rulesets_entity  on rulesets (to_tsvector('english'::regconfig,entity));
+
+create index labels_parentrole  on labels (to_tsvector('english'::regconfig,parentrole));
+create index locators_parentrole  on locators (to_tsvector('english'::regconfig,parentrole));
+create index rulenodes_parentrole  on rulenodes (to_tsvector('english'::regconfig,parentrole));
+create index rulenodes_c_parentrole  on rulenodes_c (to_tsvector('english'::regconfig,parentrole));
+create index rulenodes_e_parentrole  on rulenodes_e (to_tsvector('english'::regconfig,parentrole));
+create index rulenodes_p_parentrole  on rulenodes_p (to_tsvector('english'::regconfig,parentrole));
+create index tableschemas_parentrole  on tableschemas (to_tsvector('english'::regconfig,parentrole));
+create index va_assertions_parentrole  on va_assertions (to_tsvector('english'::regconfig,parentrole));
+create index va_concepts_parentrole  on va_concepts (to_tsvector('english'::regconfig,parentrole));
+create index va_edimensions_parentrole  on va_edimensions (to_tsvector('english'::regconfig,parentrole));
+create index va_edmembers_parentrole  on va_edmembers (to_tsvector('english'::regconfig,parentrole));
+create index va_factvars_parentrole  on va_factvars (to_tsvector('english'::regconfig,parentrole));
+create index va_tdimensions_parentrole  on va_tdimensions (to_tsvector('english'::regconfig,parentrole));
+create index va_generals_parentrole  on va_generals (to_tsvector('english'::regconfig,parentrole));
+create index va_aspectcovers_parentrole  on va_aspectcovers (to_tsvector('english'::regconfig,parentrole));
+create index va_assertionsets_parentrole  on va_assertionsets (to_tsvector('english'::regconfig,parentrole));
+create index aspectnodes_parentrole  on aspectnodes (to_tsvector('english'::regconfig,parentrole));
+create index rend_edimensions_parentrole  on rend_edimensions (to_tsvector('english'::regconfig,parentrole));
+create index rend_edmembers_parentrole  on rend_edmembers (to_tsvector('english'::regconfig,parentrole));
+create index rulesets_parentrole  on rulesets (to_tsvector('english'::regconfig,parentrole));
+
+create index elements_rinok  on elements (to_tsvector('english'::regconfig,rinok));
+create index labels_rinok  on labels (to_tsvector('english'::regconfig,rinok));
+create index linkbaserefs_rinok  on linkbaserefs (to_tsvector('english'::regconfig,rinok));
+create index locators_rinok  on locators (to_tsvector('english'::regconfig,rinok));
+create index rolerefs_rinok  on rolerefs (to_tsvector('english'::regconfig,rinok));
+create index roletypes_rinok  on roletypes (to_tsvector('english'::regconfig,rinok));
+create index rulenodes_rinok  on rulenodes (to_tsvector('english'::regconfig,rinok));
+create index rulenodes_c_rinok  on rulenodes_c (to_tsvector('english'::regconfig,rinok));
+create index rulenodes_e_rinok  on rulenodes_e (to_tsvector('english'::regconfig,rinok));
+create index rulenodes_p_rinok  on rulenodes_p (to_tsvector('english'::regconfig,rinok));
+create index tables_rinok  on tables (to_tsvector('english'::regconfig,rinok));
+create index tableschemas_rinok  on tableschemas (to_tsvector('english'::regconfig,rinok));
+create index va_assertions_rinok  on va_assertions (to_tsvector('english'::regconfig,rinok));
+create index va_concepts_rinok  on va_concepts (to_tsvector('english'::regconfig,rinok));
+create index va_edimensions_rinok  on va_edimensions (to_tsvector('english'::regconfig,rinok));
+create index va_edmembers_rinok  on va_edmembers (to_tsvector('english'::regconfig,rinok));
+create index va_factvars_rinok  on va_factvars (to_tsvector('english'::regconfig,rinok));
+create index va_tdimensions_rinok  on va_tdimensions (to_tsvector('english'::regconfig,rinok));
+create index va_generals_rinok  on va_generals (to_tsvector('english'::regconfig,rinok));
+create index tableparts_rinok  on tableparts (to_tsvector('english'::regconfig,rinok));
+create index va_aspectcovers_rinok  on va_aspectcovers (to_tsvector('english'::regconfig,rinok));
+create index va_assertionsets_rinok  on va_assertionsets (to_tsvector('english'::regconfig,rinok));
+create index aspectnodes_rinok  on aspectnodes (to_tsvector('english'::regconfig,rinok));
+create index rend_edimensions_rinok  on rend_edimensions (to_tsvector('english'::regconfig,rinok));
+create index rend_edmembers_rinok  on rend_edmembers (to_tsvector('english'::regconfig,rinok));
+create index rulesets_rinok  on rulesets (to_tsvector('english'::regconfig,rinok));
+
+create index locators_href_id on locators (to_tsvector('english'::regconfig,href_id));
+create index locators_label on locators (to_tsvector('english'::regconfig,label));
+create index arcs_arcto on arcs (to_tsvector('english'::regconfig,arcto));
+create index arcs_arcfrom on arcs (to_tsvector('english'::regconfig,arcfrom));
+
+create index messages_v on messages (to_tsvector('english'::regconfig,version));
+create index messages_entity on messages (to_tsvector('english'::regconfig,entity));
+create index messages_parentrole on messages (to_tsvector('english'::regconfig,parentrole));
+create index messages_rinok on messages (to_tsvector('english'::regconfig,rinok));
+"""
 sql_create_elements_labels = """
 create table elements_labels as 
 --insert into elements_labels
@@ -380,6 +497,14 @@ join elements_labels el on el.version=l.version and el.id=l.href_id
 where arctype='presentation' and preferredlabel is not null
 and el.role=a.preferredlabel;
 """
+
+sql_create_dop_tables = """
+CREATE TABLE IF NOT EXISTS public.roles_table_definition
+(
+    role_definition text COLLATE pg_catalog."default",
+    role_table text COLLATE pg_catalog."default"
+)
+"""
 # cursor.execute(sql_delete)
 # conn1.commit()
 
@@ -399,7 +524,7 @@ gc.collect()
 # ['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']
 # ['ins','ins'],['uk','uk'],['purcb','purcb'],['brk','brk'],['kra','kra'],['nfo','nfo'],['npf','npf'],['bki','bki'],['srki','srki']
 # for rinok in [['operatory','oper']]:
-for rinok in [['npf','npf'],['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['srki','srki'],['sro','sro']]:
+for rinok in [['uk','uk'],['purcb','purcb'],['operatory','oper'],['bki','bki'],['brk','brk'],['ins','ins'],['kra','kra'],['nfo','nfo'],['npf','npf'],['srki','srki'],['sro','sro']]:
 # for rinok in [['npf','npf']]:
     # try:
     print('parseTab', rinok)
@@ -499,26 +624,31 @@ del df_list
 gc.collect()
 
 
-cursor.execute(sql_indexes)
-# cursor.execute(sql_create_functions)
+cursor.execute(sql_indexes_new)
+cursor.execute(sql_create_functions)
 cursor.execute(sql_create_elements_labels)
 cursor.execute(sql_create_preferred_labels)
+cursor.execute(sql_create_dop_tables)
 
-# print('parseTab', 'bfo')
-# ss1 = parseTab.c_parseTab(version, 'bfo', 'bfo', period)
-# df_list1 = ss1.startParse()
-# print(df_list1.keys())
-# if len(df_list1.get('df_tables').index) != 0:
-#     str_headers = ''
-#     for xx in df_list1.keys():
-#         print(xx)
-#         headers = [xx.strip() + ' VARCHAR, ' for xx in df_list1.get(xx).keys().values]
-#         for hh in headers:
-#             str_headers = str_headers + hh + '\n'
-#         str_headers = str_headers.strip()[:-1]
-#         df_list1.get(xx).to_sql(xx[3:], conn, if_exists='append', index=False)
-# del df_list1, ss1
-# gc.collect()
+print('parseTab', 'bfo')
+ss1 = parseTab.c_parseTab(version, 'bfo', 'bfo', period)
+df_list1 = ss1.startParse()
+print(df_list1.keys())
+if len(df_list1.get('df_tables').index) != 0:
+    str_headers = ''
+    for xx in df_list1.keys():
+        print(xx)
+        headers = [xx.strip() + ' VARCHAR, ' for xx in df_list1.get(xx).keys().values]
+        for hh in headers:
+            str_headers = str_headers + hh + '\n'
+        str_headers = str_headers.strip()[:-1]
+        df_list1.get(xx).to_sql(xx[3:], conn, if_exists='append', index=False)
+del df_list1, ss1
+gc.collect()
+
+# cursor.execute(sql_indexes)
+
+
 
 conn1.commit()
 conn1.close()

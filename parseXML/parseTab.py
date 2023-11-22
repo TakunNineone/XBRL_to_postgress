@@ -92,7 +92,8 @@ class c_parseTab():
             if formulas:
                 for path in formulas:
                     soup_formula = self.df.parsetag(path,'linkbase')
-                    self.df.parse_tableTags(soup_formula, path_xsd, 'formula')
+                    self.df.parseLinkbase(soup_formula,path)
+                    self.df.parse_tableTags(soup_formula, path, 'formula')
                     self.df.parse_generals(soup_formula.find_all_next(re.compile('.*generalvariable$')),path)
                     self.df.parseRolerefs(soup_formula.find_all(re.compile('.*roleref$')),path,'formula')
                     self.df.parseArcs(soup_formula.find_all_next(re.compile('.*variablearc$')),path,'formula')
@@ -109,6 +110,7 @@ class c_parseTab():
                     self.df.parse_edimensions(soup_formula,path)
                     self.df.parse_aspectcovers(soup_formula.find_all_next(re.compile('.*aspectcover$')),path)
                     self.df.parse_assertionset(soup_formula,path)
+                    self.df.parse_orFilters(soup_formula, path)
                     self.df.parse_precond(soup_formula,path)
                     self.df.parse_messages(soup_formula,path)
             rend = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
@@ -123,6 +125,13 @@ class c_parseTab():
             lab = [f"{self.path_tax}{tab_temp.replace('http://', '')}{yy['xlink:href']}" for yy in linkbaserefs if
                    re.findall(r'lab\S*.xml',yy['xlink:href'])]
             [self.parselab(l) for l in lab if lab]
+
+            another_file=[f"{tab_temp} -- {yy['xlink:href']}" for yy in linkbaserefs if  re.findall(r'definition\S*.xml',yy['xlink:href'])==[] and
+            re.findall(r'lab\S*.xml',yy['xlink:href'])==[] and re.findall(r'presentation\S*.xml',yy['xlink:href'])==[] and re.findall(r'rend\S*.xml',yy['xlink:href'])==[] and re.findall(r'severities\S*.xml',yy['xlink:href'])==[]
+                          and re.findall(r'formula\S*.xml',yy['xlink:href'])==[]]
+            another_file=[xx for xx in another_file if xx]
+            if another_file:
+                print(another_file)
             gc.collect()
             finish = datetime.datetime.now()
             print("", end=f"\rPercentComplete: {round((i+1)/len(xx)*100,2)}%, time: {finish - start}")
@@ -136,6 +145,7 @@ class c_parseTab():
 
     def parsedef(self,path):
         soup_def=self.df.parsetag(path,'linkbase')
+        self.df.parseLinkbase(soup_def, path)
         self.df.parse_tableTags(soup_def, path, 'definition_table')
         self.df.parseRolerefs(soup_def.find_all(re.compile('.*roleref$')),path,'definition')
         self.df.parseLocators(soup_def.find_all(re.compile('.*loc$')),path,'definition')
@@ -146,6 +156,7 @@ class c_parseTab():
 
     def parsepres(self,path):
         soup_pres=self.df.parsetag(path,'linkbase')
+        self.df.parseLinkbase(soup_pres, path)
         self.df.parse_tableTags(soup_pres, path, 'presentation_table')
         self.df.parseRolerefs(soup_pres.find_all(re.compile('.*roleref$')),path,'presentation')
         self.df.parseLocators(soup_pres.find_all(re.compile('.*loc$')),path,'presentation')
@@ -153,6 +164,7 @@ class c_parseTab():
 
     def parselab(self,path):
         soup = self.df.parsetag(path, 'linkbase')
+        self.df.parseLinkbase(soup, path)
         self.df.parse_tableTags(soup, path, 'lab')
         self.df.parseRolerefs(soup.find_all(re.compile('.*roleref$')),path,'lab')
         self.df.parseLocators(soup.find_all(re.compile('.*loc$')),path,'lab')
@@ -162,6 +174,7 @@ class c_parseTab():
 
     def parserend(self,path):
         soup = self.df.parsetag(path, 'linkbase')
+        self.df.parseLinkbase(soup, path)
         self.df.parse_tableTags(soup, path, 'rend')
         self.df.parseRolerefs(soup.find_all(re.compile('.*roleref$')),path,'rend')
         self.df.parseTableschemas(soup.find_all(re.compile('.*table$')),path,'table')
@@ -207,13 +220,15 @@ class c_parseTab():
                 'df_va_generals': self.df.concatDfs(self.df.df_va_generals_Dic),
                 'df_va_aspectcovers': self.df.concatDfs(self.df.df_va_aspectcovers_Dic),
                 'df_va_assertionsets': self.df.concatDfs(self.df.df_va_assertionset_Dic),
+                'df_va_orfilters': self.df.concatDfs(self.df.df_va_orfilters_Dic),
                 'df_preconditions': self.df.concatDfs(self.df.df_preconditions_Dic),
                 'df_messages': self.df.concatDfs(self.df.df_messages_Dic),
-                'df_tabletags': self.df.concatDfs(self.df.df_tabletags_Dic)
+                'df_tabletags': self.df.concatDfs(self.df.df_tabletags_Dic),
+                'df_linkbases': self.df.concatDfs(self.df.df_linkbases_Dic)
                 }
 
 if __name__ == "__main__":
-    ss=c_parseTab('final_5_2','bfo','bfo','2023-03-31')
+    ss=c_parseTab('final_5_2','npf','npf','2023-03-31')
     print(datetime.datetime.now())
     tables=ss.startParse()
     print('\n',datetime.datetime.now())
